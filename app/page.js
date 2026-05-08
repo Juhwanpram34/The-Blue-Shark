@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { AGENTS } from '../lib/agents';
+import { PLANS, getPlan, canUseAgent, canUseCollaboration } from '../lib/pricing';
 
 function formatMessage(text) {
   if (!text) return '';
@@ -41,6 +42,9 @@ export default function Home() {
   const [collabResults, setCollabResults] = useState(null);
   const [collabHistory, setCollabHistory] = useState([]);
   const [selectedCollabAgents, setSelectedCollabAgents] = useState([]);
+  const [showPricing, setShowPricing] = useState(false);
+  const [userPlan, setUserPlan] = useState('free');
+  const [queriesUsed, setQueriesUsed] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -49,12 +53,40 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
+      if (session?.user) fetchUserPlan(session.user.id);
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) fetchUserPlan(session.user.id);
     });
     return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserPlan = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('plan, queries_used')
+        .eq('id', userId)
+        .single();
+      if (data) {
+        setUserPlan(data.plan || 'free');
+        setQueriesUsed(data.queries_used || 0);
+      }
+    } catch (e) { console.error('Plan fetch error:', e); }
+  };
+
+  // Check payment success from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('payment') === 'success') {
+        const plan = params.get('plan');
+        if (plan) setUserPlan(plan);
+        window.history.replaceState({}, '', '/');
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -95,6 +127,29 @@ export default function Home() {
     setUser(null);
     setConversations(Object.fromEntries(AGENTS.map(a => [a.id, []])));
     setTotalQueries(0);
+  };
+
+  const handleCheckout = async (planId) => {
+    if (planId === 'free') return;
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId,
+          userId: user.id,
+          userEmail: user.email,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to create checkout session');
+      }
+    } catch (e) {
+      alert('Checkout error. Please try again.');
+    }
   };
 
   const sendMessage = async () => {
@@ -487,9 +542,20 @@ export default function Home() {
 
         <div style={{
           padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)',
-          fontSize: 8, color: 'rgba(255,255,255,0.15)',
-          fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', letterSpacing: 1,
-        }}>POWERED BY GPT-4 × BLUE SHARK ENGINE</div>
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <button onClick={() => setShowPricing(true)} style={{
+            width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: userPlan === 'free' ? 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)' : `${getPlan(userPlan).color}15`,
+            color: userPlan === 'free' ? '#fff' : getPlan(userPlan).color,
+            fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+            boxShadow: userPlan === 'free' ? '0 4px 16px rgba(0,212,255,0.3)' : 'none',
+          }}>{userPlan === 'free' ? '⚡ Upgrade Plan' : `${getPlan(userPlan).icon} ${getPlan(userPlan).name} Plan`}</button>
+          <div style={{
+            fontSize: 8, color: 'rgba(255,255,255,0.15)',
+            fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', letterSpacing: 1,
+          }}>POWERED BY GPT-4 × BLUE SHARK ENGINE</div>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -827,6 +893,105 @@ export default function Home() {
           }}>THE BLUE SHARK v1.0 — AI MULTI-AGENT PLATFORM — PREDATOR EDITION</div>
         </div>
       </div>
+
+      {/* Pricing Modal */}
+      {showPricing && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }} onClick={() => setShowPricing(false)}>
+          <div style={{
+            width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto',
+            background: 'linear-gradient(180deg, #0a1628 0%, #0d1f3c 100%)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 24, padding: '40px 30px',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🦈</div>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#00d4ff', marginBottom: 8 }}>
+                Choose Your Plan
+              </h2>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', maxWidth: 400, margin: '0 auto' }}>
+                Upgrade untuk akses penuh ke semua agen AI, multi-agent collaboration, dan fitur premium lainnya.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {PLANS.map(plan => (
+                <div key={plan.id} style={{
+                  flex: '1 1 250px', maxWidth: 280, padding: '28px 24px',
+                  background: plan.popular
+                    ? 'linear-gradient(180deg, rgba(0,212,255,0.08) 0%, rgba(0,87,255,0.05) 100%)'
+                    : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${plan.popular ? 'rgba(0,212,255,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: 18, position: 'relative',
+                  display: 'flex', flexDirection: 'column',
+                }}>
+                  {plan.popular && (
+                    <div style={{
+                      position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                      padding: '4px 16px', borderRadius: 20,
+                      background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+                      fontSize: 10, fontWeight: 700, color: '#fff',
+                      textTransform: 'uppercase', letterSpacing: 1,
+                    }}>Most Popular</div>
+                  )}
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>{plan.icon}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: plan.color, marginBottom: 4 }}>
+                    {plan.name}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
+                    <span style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>{plan.priceLabel}</span>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{plan.period}</span>
+                  </div>
+                  <div style={{ flex: 1, marginBottom: 20 }}>
+                    {plan.features.map((f, i) => (
+                      <div key={i} style={{
+                        display: 'flex', gap: 8, alignItems: 'flex-start',
+                        marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,0.6)',
+                        lineHeight: 1.5,
+                      }}>
+                        <span style={{ color: plan.color, flexShrink: 0 }}>✓</span>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (plan.id === userPlan) return;
+                      if (plan.id === 'free') return;
+                      handleCheckout(plan.id);
+                    }}
+                    disabled={plan.id === userPlan}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
+                      background: plan.id === userPlan
+                        ? 'rgba(255,255,255,0.05)'
+                        : plan.gradient,
+                      color: plan.id === userPlan ? 'rgba(255,255,255,0.3)' : '#fff',
+                      fontSize: 13, fontWeight: 600, cursor: plan.id === userPlan ? 'default' : 'pointer',
+                      fontFamily: "'Outfit', sans-serif",
+                      boxShadow: plan.id !== userPlan ? `0 4px 16px ${plan.color}30` : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {plan.id === userPlan ? 'Current Plan' : plan.price === 0 ? 'Free' : `Upgrade to ${plan.name}`}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowPricing(false)} style={{
+              display: 'block', margin: '24px auto 0', padding: '8px 24px',
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: 12,
+              cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+            }}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
