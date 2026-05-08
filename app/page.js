@@ -45,8 +45,31 @@ export default function Home() {
   const [showPricing, setShowPricing] = useState(false);
   const [userPlan, setUserPlan] = useState('free');
   const [queriesUsed, setQueriesUsed] = useState(0);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstall, setShowInstall] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // PWA install prompt
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstall(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   const currentMessages = conversations[activeAgent.id] || [];
 
@@ -107,6 +130,14 @@ export default function Home() {
           options: { data: { full_name: authName } },
         });
         if (error) throw error;
+        // Send welcome email
+        try {
+          await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'welcome', to: authEmail, name: authName || 'User' }),
+          });
+        } catch (e) { console.error('Welcome email error:', e); }
         setAuthError('✅ Cek email untuk verifikasi akun!');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -562,6 +593,15 @@ export default function Home() {
           padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
+          {showInstall && (
+            <button onClick={handleInstallPWA} style={{
+              width: '100%', padding: '10px 0', borderRadius: 10, border: '1px solid rgba(0,212,255,0.2)',
+              background: 'rgba(0,212,255,0.08)', cursor: 'pointer',
+              color: '#00d4ff', fontSize: 11, fontWeight: 600,
+              fontFamily: "'Outfit', sans-serif",
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>📲 Install Aplikasi</button>
+          )}
           <button onClick={() => setShowPricing(true)} style={{
             width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
             background: userPlan === 'free' ? 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)' : `${getPlan(userPlan).color}15`,
