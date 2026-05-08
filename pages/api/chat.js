@@ -6,23 +6,23 @@ async function fetchLiveContext(query, agentId) {
   const NEWS_API_KEY = process.env.NEWS_API_KEY;
   const SERP_API_KEY = process.env.SERP_API_KEY;
 
-  // Fetch latest news
-  if (NEWS_API_KEY) {
+  // Fetch latest news via SerpAPI Google News (works in production unlike NewsAPI)
+  if (SERP_API_KEY) {
     try {
       const newsRes = await fetch(
-        `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&pageSize=5&language=id&apiKey=${NEWS_API_KEY}`
+        `https://serpapi.com/search.json?engine=google_news&q=${encodeURIComponent(query + ' 2026')}&gl=id&hl=id&api_key=${SERP_API_KEY}`
       );
       const newsData = await newsRes.json();
-      if (newsData.status === 'ok' && newsData.articles?.length > 0) {
-        liveData.news = newsData.articles.map(a => ({
+      if (newsData.news_results?.length > 0) {
+        liveData.news = newsData.news_results.slice(0, 5).map(a => ({
           title: a.title,
-          source: a.source?.name,
-          date: a.publishedAt?.split('T')[0],
-          snippet: a.description?.substring(0, 150),
+          source: a.source?.name || a.source,
+          date: a.date,
+          snippet: a.snippet || a.title,
         }));
       }
     } catch (e) {
-      console.error('NewsAPI error:', e);
+      console.error('SerpAPI News error:', e);
     }
   }
 

@@ -1,28 +1,26 @@
 // Live Data Feeds - Real-time data aggregator for The Blue Shark
 // Supports: NewsAPI, Google Trends (via SerpAPI), and more
 
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const SERP_API_KEY = process.env.SERP_API_KEY;
 
-// Fetch latest news from NewsAPI
-async function fetchNews(query, country = 'id') {
-  if (!NEWS_API_KEY) return null;
+// Fetch latest news via SerpAPI Google News (works in production)
+async function fetchNews(query) {
+  if (!SERP_API_KEY) return null;
   try {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&pageSize=5&language=id&apiKey=${NEWS_API_KEY}`;
+    const url = `https://serpapi.com/search.json?engine=google_news&q=${encodeURIComponent(query + ' 2026')}&gl=id&hl=id&api_key=${SERP_API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
-    if (data.status === 'ok' && data.articles) {
-      return data.articles.map(a => ({
+    if (data.news_results?.length > 0) {
+      return data.news_results.slice(0, 5).map(a => ({
         title: a.title,
-        description: a.description,
-        source: a.source?.name,
-        url: a.url,
-        publishedAt: a.publishedAt,
+        source: a.source?.name || a.source,
+        date: a.date,
+        snippet: a.snippet || a.title,
       }));
     }
     return null;
   } catch (e) {
-    console.error('NewsAPI error:', e);
+    console.error('SerpAPI News error:', e);
     return null;
   }
 }
