@@ -248,50 +248,53 @@ export default function Home() {
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #0d1f3c 100%)',
-        position: 'relative', overflow: 'hidden',
+        position: 'relative', overflow: 'hidden', padding: '20px',
       }}>
         <div style={{
           position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-          background: 'radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,87,255,0.06) 0%, transparent 50%)',
-          animation: 'drift 20s ease-in-out infinite',
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,87,255,0.04) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, rgba(170,0,255,0.03) 0%, transparent 50%)',
+          animation: 'drift 25s ease-in-out infinite',
         }} />
         <div style={{
-          position: 'relative', zIndex: 10, width: '100%', maxWidth: 420, padding: '0 20px',
+          position: 'relative', zIndex: 10, width: '100%', maxWidth: 400,
+          animation: 'fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{ fontSize: 56, marginBottom: 12 }}>🦈</div>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <div style={{ fontSize: 52, marginBottom: 14, animation: 'float 4s ease-in-out infinite' }}>🦈</div>
             <h1 style={{
-              fontSize: 28, fontWeight: 800, color: '#00d4ff',
-              letterSpacing: -0.5, marginBottom: 6,
+              fontSize: 26, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6,
+              background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>The Blue Shark</h1>
             <p style={{
-              fontSize: 12, color: 'rgba(255,255,255,0.35)',
+              fontSize: 11, color: 'rgba(255,255,255,0.3)',
               fontFamily: "'JetBrains Mono', monospace",
-              textTransform: 'uppercase', letterSpacing: 2,
+              textTransform: 'uppercase', letterSpacing: 2.5,
             }}>AI Multi-Agent Platform</p>
           </div>
 
           <form onSubmit={handleAuth} style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 20, padding: '32px 28px',
-            backdropFilter: 'blur(20px)',
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 22, padding: '28px 24px',
+            backdropFilter: 'blur(24px)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }}>
             <div style={{
-              display: 'flex', gap: 0, marginBottom: 24,
-              background: 'rgba(255,255,255,0.04)', borderRadius: 12,
+              display: 'flex', gap: 0, marginBottom: 22,
+              background: 'rgba(255,255,255,0.04)', borderRadius: 11,
               border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden',
             }}>
-              {['login', 'signup'].map(mode => (
-                <button key={mode} type="button" onClick={() => { setAuthMode(mode); setAuthError(''); }}
+              {['login', 'signup'].map(m => (
+                <button key={m} type="button" onClick={() => { setAuthMode(m); setAuthError(''); }}
                   style={{
                     flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
-                    background: authMode === mode ? 'rgba(0,212,255,0.15)' : 'transparent',
-                    color: authMode === mode ? '#00d4ff' : 'rgba(255,255,255,0.4)',
+                    background: authMode === m ? 'rgba(0,212,255,0.12)' : 'transparent',
+                    color: authMode === m ? '#00d4ff' : 'rgba(255,255,255,0.35)',
                     fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
-                >{mode === 'login' ? 'Login' : 'Sign Up'}</button>
+                >{m === 'login' ? 'Masuk' : 'Daftar'}</button>
               ))}
             </div>
 
@@ -299,33 +302,42 @@ export default function Home() {
               <input type="text" placeholder="Nama lengkap" value={authName}
                 onChange={e => setAuthName(e.target.value)}
                 style={{
-                  width: '100%', padding: '12px 16px', marginBottom: 12,
+                  width: '100%', padding: '13px 16px', marginBottom: 10,
                   background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 12, color: '#e0e8f0', fontSize: 14,
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 11, color: '#e0e8f0', fontSize: 14,
                   fontFamily: "'Outfit', sans-serif", outline: 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
               />
             )}
             <input type="email" placeholder="Email" value={authEmail} required
               onChange={e => setAuthEmail(e.target.value)}
               style={{
-                width: '100%', padding: '12px 16px', marginBottom: 12,
+                width: '100%', padding: '13px 16px', marginBottom: 10,
                 background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12, color: '#e0e8f0', fontSize: 14,
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 11, color: '#e0e8f0', fontSize: 14,
                 fontFamily: "'Outfit', sans-serif", outline: 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
             />
             <input type="password" placeholder="Password" value={authPassword} required
               onChange={e => setAuthPassword(e.target.value)}
               style={{
-                width: '100%', padding: '12px 16px', marginBottom: 20,
+                width: '100%', padding: '13px 16px', marginBottom: 18,
                 background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 12, color: '#e0e8f0', fontSize: 14,
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 11, color: '#e0e8f0', fontSize: 14,
                 fontFamily: "'Outfit', sans-serif", outline: 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
             />
 
             {authError && (
@@ -342,13 +354,16 @@ export default function Home() {
               style={{
                 width: '100%', padding: '14px 0', border: 'none',
                 background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
-                borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600,
+                borderRadius: 11, color: '#fff', fontSize: 15, fontWeight: 600,
                 fontFamily: "'Outfit', sans-serif", cursor: authLoading ? 'wait' : 'pointer',
-                boxShadow: '0 4px 20px rgba(0,212,255,0.3)',
+                boxShadow: '0 6px 24px rgba(0,212,255,0.25)',
                 opacity: authLoading ? 0.7 : 1,
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'translateY(0)',
               }}
-            >{authLoading ? '...' : authMode === 'login' ? 'Login' : 'Buat Akun'}</button>
+              onMouseEnter={e => { if (!authLoading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,212,255,0.35)'; }}}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,212,255,0.25)'; }}
+            >{authLoading ? '⏳ Memproses...' : authMode === 'login' ? 'Masuk' : 'Buat Akun'}</button>
           </form>
         </div>
       </div>
@@ -378,11 +393,14 @@ export default function Home() {
       {/* Sidebar */}
       <div style={{
         width: sidebarOpen ? 280 : 0, minWidth: sidebarOpen ? 280 : 0,
-        height: '100%', background: 'rgba(6,13,26,0.9)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        height: '100%', background: 'rgba(6,13,26,0.92)',
+        backdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
         display: 'flex', flexDirection: 'column',
-        transition: 'all 0.3s ease', overflow: 'hidden', zIndex: 10,
+        transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+        overflow: 'hidden', zIndex: 10,
+        position: typeof window !== 'undefined' && window.innerWidth < 768 ? 'absolute' : 'relative',
+        boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.3)' : 'none',
       }}>
         <div style={{
           padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 12,
@@ -898,20 +916,22 @@ export default function Home() {
       {showPricing && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
           zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 20,
+          padding: 20, animation: 'overlayIn 0.3s ease-out',
         }} onClick={() => setShowPricing(false)}>
           <div style={{
             width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto',
             background: 'linear-gradient(180deg, #0a1628 0%, #0d1f3c 100%)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 24, padding: '40px 30px',
+            animation: 'modalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.5)',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: 36 }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🦈</div>
               <h2 style={{ fontSize: 24, fontWeight: 800, color: '#00d4ff', marginBottom: 8 }}>
-                Choose Your Plan
+                Pilih Paket Anda
               </h2>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', maxWidth: 400, margin: '0 auto' }}>
                 Upgrade untuk akses penuh ke semua agen AI, multi-agent collaboration, dan fitur premium lainnya.
@@ -936,7 +956,7 @@ export default function Home() {
                       background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
                       fontSize: 10, fontWeight: 700, color: '#fff',
                       textTransform: 'uppercase', letterSpacing: 1,
-                    }}>Most Popular</div>
+                    }}>Paling Populer</div>
                   )}
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{plan.icon}</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: plan.color, marginBottom: 4 }}>
@@ -977,7 +997,7 @@ export default function Home() {
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    {plan.id === userPlan ? 'Current Plan' : plan.price === 0 ? 'Free' : `Upgrade to ${plan.name}`}
+                    {plan.id === userPlan ? 'Paket Aktif' : plan.price === 0 ? 'Gratis' : `Upgrade ke ${plan.name}`}
                   </button>
                 </div>
               ))}
@@ -988,7 +1008,7 @@ export default function Home() {
               background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: 12,
               cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
-            }}>Close</button>
+            }}>Tutup</button>
           </div>
         </div>
       )}
