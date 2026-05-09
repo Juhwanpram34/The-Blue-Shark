@@ -1,4 +1,5 @@
 import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: 'The Blue Shark — AI Multi-Agent Platform',
@@ -56,6 +57,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <ServiceWorkerRegistration />
+        <Analytics />
       </body>
     </html>
   );
