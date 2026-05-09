@@ -129,43 +129,98 @@ export default async function handler(req, res) {
 
     const systemPrompt = agent.systemPrompt +
       `\n\nCRITICAL: Today is ${today}. You have access to LIVE real-time data below. ALWAYS prioritize this live data over your training data. Reference specific dates and sources when presenting information.` +
-      liveContext +
-      `\n\nAlso use web search to supplement and verify the live data above with additional real-time information.`;
+      liveContext;
 
-    // Use GPT-4o with web search + live data context
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        tools: [{ type: 'web_search_preview' }],
-        input: [
-          { role: 'system', content: systemPrompt },
-          ...messages.map(m => ({ role: m.role, content: m.content })),
-        ],
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      return res.status(500).json({ error: data.error.message });
-    }
-
-    // Extract text content from response
+    // Try GPT-4o with responses endpoint first, fallback to chat/completions
     let content = '';
-    if (data.output) {
-      for (const block of data.output) {
-        if (block.type === 'message' && block.content) {
-          for (const c of block.content) {
-            if (c.type === 'output_text') {
-              content += c.text;
+    let usage = {};
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          tools: [{ type: 'web_search_preview' }],
+          input: [
+            { role: 'system', content: systemPrompt },
+            ...messages.map(m => ({ role: m.role, content: m.content })),
+          ],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      if (data.output) {
+        for (const block of data.output) {
+          if (block.type === 'message' && block.content) {
+            for (const c of block.content) {
+              if (c.type === 'output_text') {
+                content += c.text;
+              }
             }
           }
         }
+      }
+      usage = data.usage || {};
+    } catch (primaryError) {
+      console.log('Responses API failed, falling back to chat/completions:', primaryError.message);
+
+      // Fallback to chat/completions
+      const fallbackResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages.map(m => ({ role: m.role, content: m.content })),
+          ],
+          max_tokens: 4096,
+          temperature: 0.7,
+        }),
+      });
+
+      const fallbackData = await fallbackResponse.json();
+
+      if (fallbackData.error) {
+        // Try gpt-4o-mini as last resort
+        const miniResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...messages.map(m => ({ role: m.role, content: m.content })),
+            ],
+            max_tokens: 4096,
+            temperature: 0.7,
+          }),
+        });
+
+        const miniData = await miniResponse.json();
+        if (miniData.error) {
+          return res.status(500).json({ error: miniData.error.message });
+        }
+        content = miniData.choices?.[0]?.message?.content || '';
+        usage = miniData.usage || {};
+      } else {
+        content = fallbackData.choices?.[0]?.message?.content || '';
+        usage = fallbackData.usage || {};
       }
     }
 
@@ -173,16 +228,15 @@ export default async function handler(req, res) {
       content = 'Maaf, terjadi kesalahan. Silakan coba lagi.';
     }
 
-    const usage = data.usage || {};
     const hasLiveData = Object.keys(liveData).length > 0;
 
     return res.status(200).json({
       content,
       liveDataSources: hasLiveData ? Object.keys(liveData) : [],
       usage: {
-        prompt_tokens: usage.input_tokens || 0,
-        completion_tokens: usage.output_tokens || 0,
-        total_tokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+        prompt_tokens: usage.input_tokens || usage.prompt_tokens || 0,
+        completion_tokens: usage.output_tokens || usage.completion_tokens || 0,
+        total_tokens: (usage.input_tokens || usage.prompt_tokens || 0) + (usage.output_tokens || usage.completion_tokens || 0),
       },
     });
   } catch (error) {
