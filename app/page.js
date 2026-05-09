@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { AGENTS } from '../lib/agents';
 import { PLANS, getPlan, canUseAgent, canUseCollaboration } from '../lib/pricing';
+import { exportToPDF, exportToCSV } from '../lib/export';
 
 function formatMessage(text) {
   if (!text) return '';
@@ -672,6 +673,62 @@ export default function Home() {
             fontSize: 10, color: activeAgent.color,
             fontFamily: "'JetBrains Mono', monospace",
           }}>{currentMessages.filter(m => m.role === 'user').length} queries</div>
+          {/* Export Buttons */}
+          {((mode === 'single' && currentMessages.length > 0) || (mode === 'collab' && collabResults && !collabResults.error)) && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => {
+                if (mode === 'collab' && collabResults) {
+                  exportToPDF({
+                    type: 'collab',
+                    query: collabResults.query,
+                    agentsUsed: collabResults.agentsUsed,
+                    executiveSummary: collabResults.executiveSummary,
+                    agentResults: collabResults.agentResults,
+                  }, `blue-shark-collab-${Date.now()}`);
+                } else {
+                  exportToPDF({
+                    type: 'chat',
+                    agentName: activeAgent.name,
+                    query: currentMessages.find(m => m.role === 'user')?.content,
+                    messages: currentMessages,
+                  }, `blue-shark-${activeAgent.id}-${Date.now()}`);
+                }
+              }} style={{
+                padding: '5px 10px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.5)', fontSize: 10, cursor: 'pointer',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.2s ease',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.1)'; e.currentTarget.style.color = '#00d4ff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >📄 PDF</button>
+              <button onClick={() => {
+                if (mode === 'collab' && collabResults) {
+                  exportToCSV({
+                    type: 'collab',
+                    executiveSummary: collabResults.executiveSummary,
+                    agentResults: collabResults.agentResults,
+                  }, `blue-shark-collab-${Date.now()}`);
+                } else {
+                  exportToCSV({
+                    type: 'chat',
+                    agentName: activeAgent.name,
+                    messages: currentMessages,
+                  }, `blue-shark-${activeAgent.id}-${Date.now()}`);
+                }
+              }} style={{
+                padding: '5px 10px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.5)', fontSize: 10, cursor: 'pointer',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.2s ease',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,230,118,0.1)'; e.currentTarget.style.color = '#00e676'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >📊 CSV</button>
+            </div>
+          )}
         </div>
 
         {/* Messages */}
