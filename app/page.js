@@ -48,8 +48,94 @@ export default function Home() {
   const [queriesUsed, setQueriesUsed] = useState(0);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
+  const [theme, setTheme] = useState('dark');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Theme colors
+  const T = theme === 'light' ? {
+    bg: 'linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 50%, #dde4ed 100%)',
+    bgSidebar: 'rgba(255,255,255,0.92)',
+    bgHeader: 'rgba(255,255,255,0.85)',
+    bgCard: 'rgba(0,0,0,0.03)',
+    bgInput: 'rgba(0,0,0,0.04)',
+    bgGlass: 'rgba(0,0,0,0.02)',
+    bgDrift: 'radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,87,255,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(170,0,255,0.03) 0%, transparent 50%)',
+    text: '#1a2332',
+    textSecondary: '#3d4f63',
+    textMuted: 'rgba(0,0,0,0.4)',
+    border: 'rgba(0,0,0,0.08)',
+    borderHover: 'rgba(0,0,0,0.15)',
+    msgUser: 'linear-gradient(135deg, rgba(0,212,255,0.12) 0%, rgba(0,87,255,0.12) 100%)',
+    msgUserBorder: 'rgba(0,212,255,0.2)',
+    msgBot: 'rgba(0,0,0,0.03)',
+    msgBotBorder: 'rgba(0,0,0,0.06)',
+    msgText: '#2d3748',
+    inputBg: 'rgba(0,0,0,0.03)',
+    inputBorder: 'rgba(0,0,0,0.08)',
+    inputText: '#1a2332',
+    modalBg: 'linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%)',
+    modalOverlay: 'rgba(0,0,0,0.4)',
+    authBg: 'linear-gradient(180deg, #f0f4f8 0%, #e2e8f0 50%, #dde4ed 100%)',
+    authCard: 'rgba(255,255,255,0.9)',
+    authInput: 'rgba(0,0,0,0.04)',
+    authInputBorder: 'rgba(0,0,0,0.1)',
+    statBg: 'rgba(0,0,0,0.03)',
+    statBorder: 'rgba(0,0,0,0.06)',
+    footerText: 'rgba(0,0,0,0.25)',
+    scrollThumb: 'rgba(0,212,255,0.3)',
+    error: 'rgba(255,23,68,0.08)',
+    errorBorder: 'rgba(255,23,68,0.2)',
+    success: 'rgba(0,230,118,0.08)',
+    successBorder: 'rgba(0,230,118,0.2)',
+  } : {
+    bg: 'linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #0d1f3c 100%)',
+    bgSidebar: 'rgba(6,13,26,0.92)',
+    bgHeader: 'rgba(6,13,26,0.6)',
+    bgCard: 'rgba(255,255,255,0.03)',
+    bgInput: 'rgba(255,255,255,0.03)',
+    bgGlass: 'rgba(255,255,255,0.02)',
+    bgDrift: 'radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,87,255,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(170,0,255,0.03) 0%, transparent 50%)',
+    text: '#e0e8f0',
+    textSecondary: '#c0c8d4',
+    textMuted: 'rgba(255,255,255,0.35)',
+    border: 'rgba(255,255,255,0.06)',
+    borderHover: 'rgba(255,255,255,0.12)',
+    msgUser: 'linear-gradient(135deg, rgba(0,212,255,0.15) 0%, rgba(0,87,255,0.15) 100%)',
+    msgUserBorder: 'rgba(0,212,255,0.25)',
+    msgBot: 'rgba(255,255,255,0.04)',
+    msgBotBorder: 'rgba(255,255,255,0.08)',
+    msgText: '#d0d8e4',
+    inputBg: 'rgba(255,255,255,0.03)',
+    inputBorder: 'rgba(255,255,255,0.08)',
+    inputText: '#e0e8f0',
+    modalBg: 'linear-gradient(180deg, #0a1628 0%, #0d1f3c 100%)',
+    modalOverlay: 'rgba(0,0,0,0.85)',
+    authBg: 'linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #0d1f3c 100%)',
+    authCard: 'rgba(255,255,255,0.025)',
+    authInput: 'rgba(255,255,255,0.04)',
+    authInputBorder: 'rgba(255,255,255,0.07)',
+    statBg: 'rgba(255,255,255,0.02)',
+    statBorder: 'rgba(255,255,255,0.06)',
+    footerText: 'rgba(255,255,255,0.15)',
+    error: 'rgba(255,23,68,0.1)',
+    errorBorder: 'rgba(255,23,68,0.3)',
+    success: 'rgba(0,230,118,0.1)',
+    successBorder: 'rgba(0,230,118,0.3)',
+    scrollThumb: 'rgba(0,212,255,0.3)',
+  };
+
+  // Save theme to localStorage
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('bs-theme') : null;
+    if (saved) setTheme(saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('bs-theme', next);
+  };
 
   // PWA install prompt
   useEffect(() => {
@@ -280,14 +366,22 @@ export default function Home() {
     return (
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #0d1f3c 100%)',
+        background: T.authBg,
         position: 'relative', overflow: 'hidden', padding: '20px',
       }}>
         <div style={{
           position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-          background: 'radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(0,87,255,0.04) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, rgba(170,0,255,0.03) 0%, transparent 50%)',
+          background: T.bgDrift,
           animation: 'drift 25s ease-in-out infinite',
         }} />
+        {/* Theme toggle on login */}
+        <button onClick={toggleTheme} style={{
+          position: 'absolute', top: 20, right: 20, zIndex: 20,
+          width: 40, height: 40, borderRadius: 12,
+          background: T.bgCard, border: `1px solid ${T.border}`,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, transition: 'all 0.3s ease',
+        }}>{theme === 'dark' ? '☀️' : '🌙'}</button>
         <div style={{
           position: 'relative', zIndex: 10, width: '100%', maxWidth: 400,
           animation: 'fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -307,11 +401,11 @@ export default function Home() {
           </div>
 
           <form onSubmit={handleAuth} style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: T.authCard,
+            border: `1px solid ${T.border}`,
             borderRadius: 22, padding: '28px 24px',
             backdropFilter: 'blur(24px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            boxShadow: theme === 'dark' ? '0 20px 60px rgba(0,0,0,0.3)' : '0 20px 60px rgba(0,0,0,0.08)',
           }}>
             <div style={{
               display: 'flex', gap: 0, marginBottom: 22,
@@ -407,9 +501,9 @@ export default function Home() {
   return (
     <div style={{
       width: '100%', height: '100vh',
-      background: 'linear-gradient(180deg, #060d1a 0%, #0a1628 50%, #0d1f3c 100%)',
+      background: T.bg,
       display: 'flex', fontFamily: "'Outfit', sans-serif",
-      color: '#e0e8f0', position: 'relative', overflow: 'hidden',
+      color: T.text, position: 'relative', overflow: 'hidden',
     }}>
       {/* Background */}
       <div style={{
@@ -426,9 +520,9 @@ export default function Home() {
       {/* Sidebar */}
       <div style={{
         width: sidebarOpen ? 280 : 0, minWidth: sidebarOpen ? 280 : 0,
-        height: '100%', background: 'rgba(6,13,26,0.92)',
+        height: '100%', background: T.bgSidebar,
         backdropFilter: 'blur(24px)',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
+        borderRight: `1px solid ${T.border}`,
         display: 'flex', flexDirection: 'column',
         transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         overflow: 'hidden', zIndex: 10,
@@ -668,6 +762,13 @@ export default function Home() {
             </>
           )}
           <div style={{ flex: 1 }} />
+          {/* Theme Toggle */}
+          <button onClick={toggleTheme} style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: T.bgCard, border: `1px solid ${T.border}`,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, transition: 'all 0.3s ease',
+          }}>{theme === 'dark' ? '☀️' : '🌙'}</button>
           <div style={{
             padding: '5px 12px', borderRadius: 20,
             background: `${activeAgent.color}12`, border: `1px solid ${activeAgent.color}25`,
@@ -926,12 +1027,10 @@ export default function Home() {
                 }}>
                   <div style={{
                     maxWidth: '82%', padding: '14px 18px',
-                    background: msg.role === 'user'
-                      ? 'linear-gradient(135deg, rgba(0,212,255,0.15) 0%, rgba(0,87,255,0.15) 100%)'
-                      : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${msg.role === 'user' ? 'rgba(0,212,255,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                    background: msg.role === 'user' ? T.msgUser : T.msgBot,
+                    border: `1px solid ${msg.role === 'user' ? T.msgUserBorder : T.msgBotBorder}`,
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                    color: '#d0d8e4', fontSize: 14, lineHeight: 1.7,
+                    color: T.msgText, fontSize: 14, lineHeight: 1.7,
                   }}>
                     {msg.role !== 'user' && (
                       <div style={{
@@ -974,8 +1073,8 @@ export default function Home() {
         <div style={{ padding: '14px 20px 20px', background: 'linear-gradient(180deg, transparent 0%, rgba(6,13,26,0.8) 100%)' }}>
           <div style={{
             display: 'flex', gap: 10, alignItems: 'flex-end',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: T.inputBg,
+            border: `1px solid ${T.inputBorder}`,
             borderRadius: 16, padding: '6px 6px 6px 18px',
           }}>
             <textarea ref={inputRef} value={input}
@@ -984,7 +1083,7 @@ export default function Home() {
               placeholder={mode === 'collab' ? 'Kirim pertanyaan untuk multi-agent collaboration...' : activeAgent.placeholder} rows={1}
               style={{
                 flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                color: '#e0e8f0', fontSize: 14, fontFamily: "'Outfit', sans-serif",
+                color: T.inputText, fontSize: 14, fontFamily: "'Outfit', sans-serif",
                 resize: 'none', lineHeight: 1.6, maxHeight: 120, minHeight: 24, padding: '8px 0',
               }}
               onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
