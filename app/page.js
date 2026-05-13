@@ -164,23 +164,24 @@ export default function Home() {
   const handleCheckout = async (planId) => {
     if (planId === 'free') return;
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await fetch('/api/doku-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planId,
           userId: user.id,
           userEmail: user.email,
+          userName: user.user_metadata?.full_name || 'User',
         }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
       } else {
-        alert(data.error || 'Failed to create checkout session');
+        alert(data.error || 'Gagal membuat pembayaran');
       }
     } catch (e) {
-      alert('Checkout error. Please try again.');
+      alert('Terjadi kesalahan. Silakan coba lagi.');
     }
   };
 
@@ -1059,10 +1060,16 @@ export default function Home() {
                   <div style={{ fontSize: 18, fontWeight: 700, color: plan.color, marginBottom: 4 }}>
                     {plan.name}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
-                    <span style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>{plan.priceLabel}</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>{plan.priceLabel}</span>
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{plan.period}</span>
                   </div>
+                  {plan.priceUsd && plan.price > 0 && (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
+                      ≈ {plan.priceUsd}/bulan
+                    </div>
+                  )}
+                  {plan.price === 0 && <div style={{ height: 16, marginBottom: 16 }} />}
                   <div style={{ flex: 1, marginBottom: 20 }}>
                     {plan.features.map((f, i) => (
                       <div key={i} style={{
