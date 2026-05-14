@@ -51,6 +51,7 @@ export default function Home() {
   const [selectedCollabAgents, setSelectedCollabAgents] = useState([]);
   const [showPricing, setShowPricing] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [userPlan, setUserPlan] = useState('free');
   const [queriesUsed, setQueriesUsed] = useState(0);
@@ -230,14 +231,15 @@ export default function Home() {
     if (!user || messages.length < 2) return;
     try {
       // Check if conversation exists for this agent
-      let { data: existing } = await supabase
+      const { data: existingList } = await supabase
         .from('conversations')
         .select('id')
         .eq('user_id', user.id)
         .eq('agent_id', agentId)
         .eq('is_archived', false)
-        .single();
+        .limit(1);
 
+      const existing = existingList?.[0];
       let conversationId;
       const title = messages.find(m => m.role === 'user')?.content?.substring(0, 100) || 'Untitled';
 
@@ -247,11 +249,12 @@ export default function Home() {
         // Delete old messages and re-insert
         await supabase.from('messages').delete().eq('conversation_id', conversationId);
       } else {
-        const { data: newConvo } = await supabase
+        const { data: newConvo, error: convoError } = await supabase
           .from('conversations')
           .insert({ user_id: user.id, agent_id: agentId, title })
           .select('id')
           .single();
+        if (convoError) { console.error('Create conversation error:', convoError); return; }
         conversationId = newConvo?.id;
       }
 
@@ -261,7 +264,8 @@ export default function Home() {
           role: m.role,
           content: m.content,
         }));
-        await supabase.from('messages').insert(msgRows);
+        const { error: msgError } = await supabase.from('messages').insert(msgRows);
+        if (msgError) console.error('Insert messages error:', msgError);
       }
 
       // Update queries_used in profile
@@ -804,12 +808,18 @@ export default function Home() {
               {user.email}
             </div>
           </div>
+          <button onClick={() => setShowSettings(true)} style={{
+            padding: '5px 10px', borderRadius: 8,
+            background: T.bgCard, border: `1px solid ${T.border}`,
+            color: T.textSecondary, fontSize: 10, cursor: 'pointer',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>⚙️</button>
           <button onClick={handleLogout} style={{
             padding: '5px 10px', borderRadius: 8,
             background: 'rgba(255,23,68,0.1)', border: '1px solid rgba(255,23,68,0.2)',
             color: '#ff1744', fontSize: 10, cursor: 'pointer',
             fontFamily: "'JetBrains Mono', monospace",
-          }}>Logout</button>
+          }}>Keluar</button>
         </div>
 
         {/* Stats */}
@@ -1381,6 +1391,171 @@ export default function Home() {
           }}>THE BLUE SHARK v1.0 — AI MULTI-AGENT PLATFORM — PREDATOR EDITION</div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: T.modalOverlay, backdropFilter: 'blur(12px)',
+          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20, animation: 'overlayIn 0.3s ease-out',
+        }} onClick={() => setShowSettings(false)}>
+          <div style={{
+            width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto',
+            background: T.modalBg,
+            border: `1px solid ${T.border}`,
+            borderRadius: 24, padding: '36px 30px',
+            animation: 'modalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>⚙️</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#00d4ff', marginBottom: 6 }}>Pengaturan</h2>
+              <p style={{ fontSize: 12, color: T.textMuted }}>Kelola akun dan preferensi Anda</p>
+            </div>
+
+            {/* Profile Section */}
+            <div style={{
+              padding: '20px', background: T.statBg, border: `1px solid ${T.statBorder}`,
+              borderRadius: 14, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>👤 Profil</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20, fontWeight: 700, color: '#fff',
+                }}>{(user?.user_metadata?.full_name || user?.email || '?')[0].toUpperCase()}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: T.text }}>{user?.user_metadata?.full_name || 'User'}</div>
+                  <div style={{ fontSize: 12, color: T.textMuted }}>{user?.email}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, padding: '8px 12px', background: T.bgCard, borderRadius: 8, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#00d4ff' }}>{getPlan(userPlan).icon} {getPlan(userPlan).name}</div>
+                  <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>PAKET</div>
+                </div>
+                <div style={{ flex: 1, padding: '8px 12px', background: T.bgCard, borderRadius: 8, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#00e676' }}>{queriesUsed}</div>
+                  <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>QUERY HARI INI</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Appearance */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg, border: `1px solid ${T.statBorder}`,
+              borderRadius: 14, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>🎨 Tampilan</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: T.text }}>Mode Gelap / Terang</span>
+                <button onClick={toggleTheme} style={{
+                  padding: '6px 16px', borderRadius: 8,
+                  background: theme === 'dark' ? 'rgba(255,213,0,0.15)' : 'rgba(0,0,0,0.1)',
+                  border: `1px solid ${theme === 'dark' ? 'rgba(255,213,0,0.3)' : 'rgba(0,0,0,0.15)'}`,
+                  color: theme === 'dark' ? '#ffd600' : '#1a2332',
+                  fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                }}>{theme === 'dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap'}</button>
+              </div>
+            </div>
+
+            {/* Language */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg, border: `1px solid ${T.statBorder}`,
+              borderRadius: 14, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>🌐 Bahasa Respons AI</div>
+              <p style={{ fontSize: 12, color: T.textSecondary, marginBottom: 10, lineHeight: 1.6 }}>
+                Agen AI akan otomatis merespons sesuai bahasa yang Anda gunakan. Ketik dalam Bahasa Indonesia untuk respons Indonesia, atau English untuk respons Inggris.
+              </p>
+              <div style={{ fontSize: 11, color: T.textMuted, fontStyle: 'italic' }}>
+                💡 Tip: Mulai pertanyaan dengan "Jawab dalam Bahasa Indonesia:" untuk memastikan respons dalam bahasa yang diinginkan.
+              </div>
+            </div>
+
+            {/* Data Management */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg, border: `1px solid ${T.statBorder}`,
+              borderRadius: 14, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>🗂️ Data & Riwayat</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button onClick={async () => {
+                  if (!confirm('Hapus SEMUA riwayat chat dari semua agen? Tindakan ini tidak bisa dibatalkan.')) return;
+                  setConversations(Object.fromEntries(AGENTS.map(a => [a.id, []])));
+                  if (user) {
+                    const { data: convos } = await supabase.from('conversations').select('id').eq('user_id', user.id);
+                    if (convos) {
+                      for (const c of convos) { await supabase.from('messages').delete().eq('conversation_id', c.id); }
+                      await supabase.from('conversations').delete().eq('user_id', user.id);
+                    }
+                  }
+                  alert('Semua riwayat chat berhasil dihapus.');
+                }} style={{
+                  padding: '10px 16px', borderRadius: 10,
+                  background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.2)',
+                  color: '#ff6b35', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", textAlign: 'left',
+                }}>🗑️ Hapus Semua Riwayat Chat</button>
+                <button onClick={() => {
+                  const allData = JSON.stringify(conversations, null, 2);
+                  const blob = new Blob([allData], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = `blue-shark-backup-${Date.now()}.json`; a.click();
+                  URL.revokeObjectURL(url);
+                }} style={{
+                  padding: '10px 16px', borderRadius: 10,
+                  background: T.bgCard, border: `1px solid ${T.border}`,
+                  color: T.textSecondary, fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", textAlign: 'left',
+                }}>💾 Backup Riwayat Chat (JSON)</button>
+              </div>
+            </div>
+
+            {/* Account Actions */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg, border: `1px solid ${T.statBorder}`,
+              borderRadius: 14, marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>🔐 Akun</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button onClick={() => { setShowSettings(false); setShowPricing(true); }} style={{
+                  padding: '10px 16px', borderRadius: 10,
+                  background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+                  border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", textAlign: 'left',
+                  boxShadow: '0 4px 16px rgba(0,212,255,0.25)',
+                }}>⚡ Upgrade Paket</button>
+                <button onClick={() => {
+                  handleLogout();
+                  setShowSettings(false);
+                }} style={{
+                  padding: '10px 16px', borderRadius: 10,
+                  background: 'rgba(255,23,68,0.1)', border: '1px solid rgba(255,23,68,0.2)',
+                  color: '#ff1744', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", textAlign: 'left',
+                }}>🚪 Keluar dari Akun</button>
+              </div>
+            </div>
+
+            <button onClick={() => setShowSettings(false)} style={{
+              display: 'block', margin: '0 auto', padding: '8px 24px',
+              background: 'transparent', border: `1px solid ${T.border}`,
+              borderRadius: 10, color: T.textMuted, fontSize: 12,
+              cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+            }}>Tutup</button>
+
+            <div style={{
+              textAlign: 'center', marginTop: 16, fontSize: 10, color: T.footerText,
+              fontFamily: "'JetBrains Mono', monospace",
+            }}>The Blue Shark v1.0 — Predator Edition</div>
+          </div>
+        </div>
+      )}
 
       {/* Analytics Modal */}
       {showAnalytics && analyticsData && (
