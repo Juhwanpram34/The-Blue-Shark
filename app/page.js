@@ -196,39 +196,83 @@ export default function Home() {
     } catch (e) { console.error('Plan fetch error:', e); }
   };
 
-  // Load saved conversations from database
+  // === CHAT PERSISTENCE (localStorage + Supabase) ===
+  
+  // Save to localStorage immediately (fast, reliable)
+  const saveToLocal = (convos) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bs-chats', JSON.stringify(convos));
+      }
+    } catch (e) { console.error('LocalStorage save error:', e); }
+  };
+
+  // Load from localStorage (instant on refresh)
+  const loadFromLocal = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('bs-chats');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Object.keys(parsed).length > 0) {
+            setConversations(prev => ({ ...prev, ...parsed }));
+            return true;
+          }
+        }
+      }
+    } catch (e) { console.error('LocalStorage load error:', e); }
+    return false;
+  };
+
+  // Load saved conversations from database (background sync)
   const loadSavedChats = async (userId) => {
     try {
-      const { data: convos } = await supabase
+      const { data: convos, error: convosError } = await supabase
         .from('conversations')
         .select('id, agent_id, title, updated_at')
         .eq('user_id', userId)
         .eq('is_archived', false)
         .order('updated_at', { ascending: false });
 
+      if (convosError) { console.error('Load convos error:', convosError); return; }
+
       if (convos && convos.length > 0) {
         const loaded = {};
         for (const convo of convos) {
-          const { data: msgs } = await supabase
+          const { data: msgs, error: msgsError } = await supabase
             .from('messages')
             .select('role, content, created_at')
             .eq('conversation_id', convo.id)
             .order('created_at', { ascending: true });
+
+          if (msgsError) { console.error('Load msgs error:', msgsError); continue; }
 
           if (msgs && msgs.length > 0) {
             loaded[convo.agent_id] = msgs.map(m => ({ role: m.role, content: m.content }));
           }
         }
         if (Object.keys(loaded).length > 0) {
-          setConversations(prev => ({ ...prev, ...loaded }));
+          setConversations(prev => {
+            const merged = { ...prev, ...loaded };
+            saveToLocal(merged);
+            return merged;
+          });
         }
       }
     } catch (e) { console.error('Load chats error:', e); }
   };
 
-  // Save conversation to database
+  // Save conversation to database (background)
   const saveToDatabase = async (agentId, messages) => {
     if (!user || messages.length < 2) return;
+    
+    // Always save to localStorage first (instant)
+    setConversations(prev => {
+      const updated = { ...prev, [agentId]: messages };
+      saveToLocal(updated);
+      return prev; // don't update state again, already updated
+    });
+
     try {
       // Check if conversation exists for this agent
       const { data: existingList } = await supabase
@@ -246,7 +290,6 @@ export default function Home() {
       if (existing) {
         conversationId = existing.id;
         await supabase.from('conversations').update({ title, updated_at: new Date().toISOString() }).eq('id', conversationId);
-        // Delete old messages and re-insert
         await supabase.from('messages').delete().eq('conversation_id', conversationId);
       } else {
         const { data: newConvo, error: convoError } = await supabase
@@ -267,19 +310,15 @@ export default function Home() {
         const { error: msgError } = await supabase.from('messages').insert(msgRows);
         if (msgError) console.error('Insert messages error:', msgError);
       }
-
-      // Update queries_used in profile
-      await supabase
-        .from('profiles')
-        .update({ queries_used: queriesUsed + 1 })
-        .eq('id', user.id);
-
-    } catch (e) { console.error('Save chat error:', e); }
+    } catch (e) { console.error('Save to DB error:', e); }
   };
 
-  // Load chats when user logs in
+  // Load chats: localStorage first (instant), then Supabase (background sync)
   useEffect(() => {
-    if (user) loadSavedChats(user.id);
+    if (user) {
+      loadFromLocal();
+      loadSavedChats(user.id);
+    }
   }, [user]);
 
   // Fetch analytics data
@@ -352,7 +391,9 @@ export default function Home() {
   // Clear chat for current agent
   const clearChat = async (agentId) => {
     if (!confirm('Hapus riwayat chat untuk agen ini?')) return;
-    setConversations(prev => ({ ...prev, [agentId]: [] }));
+    const updated = { ...conversations, [agentId]: [] };
+    setConversations(updated);
+    saveToLocal(updated);
     if (user) {
       try {
         const { data: convo } = await supabase
@@ -361,7 +402,7 @@ export default function Home() {
           .eq('user_id', user.id)
           .eq('agent_id', agentId)
           .eq('is_archived', false)
-          .single();
+          .maybeSingle();
         if (convo) {
           await supabase.from('messages').delete().eq('conversation_id', convo.id);
           await supabase.from('conversations').delete().eq('id', convo.id);
@@ -447,8 +488,10 @@ export default function Home() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setConversations(Object.fromEntries(AGENTS.map(a => [a.id, []])));
+    const empty = Object.fromEntries(AGENTS.map(a => [a.id, []]));
+    setConversations(empty);
     setTotalQueries(0);
+    if (typeof window !== 'undefined') localStorage.removeItem('bs-chats');
   };
 
   const handleCheckout = async (planId) => {
