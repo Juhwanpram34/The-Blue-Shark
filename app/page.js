@@ -572,6 +572,24 @@ export default function Home() {
         });
         const data = await res.json();
         const content = data.content || data.error || 'Maaf, terjadi kesalahan.';
+        
+        // Simulate streaming effect - reveal text progressively
+        const words = content.split(' ');
+        let displayed = '';
+        const streamId = activeAgent.id;
+        
+        for (let i = 0; i < words.length; i++) {
+          displayed += (i === 0 ? '' : ' ') + words[i];
+          const currentText = displayed;
+          setConversations(prev => ({
+            ...prev,
+            [streamId]: [...updatedMessages, { role: 'assistant', content: currentText }],
+          }));
+          // Speed: faster for short responses, slower for long
+          const delay = words.length > 100 ? 15 : words.length > 50 ? 25 : 35;
+          await new Promise(r => setTimeout(r, delay));
+        }
+        
         const finalMessages = [...updatedMessages, { role: 'assistant', content }];
         setConversations(prev => ({
           ...prev,
@@ -1347,8 +1365,8 @@ export default function Home() {
                     color: T.msgText, fontSize: 14, lineHeight: 1.7,
                     position: 'relative',
                   }}
-                    onMouseEnter={e => { const btn = e.currentTarget.querySelector('.del-btn'); if (btn) btn.style.opacity = '1'; }}
-                    onMouseLeave={e => { const btn = e.currentTarget.querySelector('.del-btn'); if (btn) btn.style.opacity = '0'; }}
+                    onMouseEnter={e => { e.currentTarget.querySelectorAll('.del-btn').forEach(btn => btn.style.opacity = '1'); }}
+                    onMouseLeave={e => { e.currentTarget.querySelectorAll('.del-btn').forEach(btn => btn.style.opacity = '0'); }}
                   >
                     <button className="del-btn" onClick={() => deleteMessage(activeAgent.id, i)} style={{
                       position: 'absolute', top: 6, right: 6,
@@ -1358,6 +1376,22 @@ export default function Home() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       opacity: 0, transition: 'opacity 0.2s ease',
                     }}>✕</button>
+                    {msg.role === 'assistant' && (
+                      <button className="del-btn" onClick={() => {
+                        navigator.clipboard.writeText(msg.content.replace(/\*\*/g, '').replace(/^[\s]*[-•]\s/gm, '• '));
+                        const btn = event.currentTarget;
+                        btn.textContent = '✓';
+                        btn.style.color = '#00e676';
+                        setTimeout(() => { btn.textContent = '📋'; btn.style.color = T.textMuted; }, 1500);
+                      }} style={{
+                        position: 'absolute', top: 6, right: 32,
+                        width: 22, height: 22, borderRadius: 6,
+                        background: T.bgCard, border: 'none',
+                        color: T.textMuted, fontSize: 10, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: 0, transition: 'opacity 0.2s ease',
+                      }}>📋</button>
+                    )}
                     {msg.role !== 'user' && (
                       <div style={{
                         fontSize: 10, fontWeight: 600, color: activeAgent.color,
