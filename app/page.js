@@ -419,7 +419,7 @@ export default function Home() {
                   style={{
                     flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
                     background: authMode === m ? 'rgba(0,212,255,0.12)' : 'transparent',
-                    color: authMode === m ? '#00d4ff' : 'rgba(255,255,255,0.35)',
+                    color: authMode === m ? '#00d4ff' : T.textMuted,
                     fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
@@ -439,7 +439,7 @@ export default function Home() {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
                 onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
+                onBlur={e => { e.target.style.borderColor = T.authInputBorder; e.target.style.background = T.authInput; }}
               />
             )}
             <input type="email" placeholder="Email" value={authEmail} required
@@ -453,7 +453,7 @@ export default function Home() {
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
               onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
-              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
+              onBlur={e => { e.target.style.borderColor = T.authInputBorder; e.target.style.background = T.authInput; }}
             />
             <input type="password" placeholder="Password" value={authPassword} required
               onChange={e => setAuthPassword(e.target.value)}
@@ -466,7 +466,7 @@ export default function Home() {
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
               onFocus={e => { e.target.style.borderColor = 'rgba(0,212,255,0.4)'; e.target.style.background = 'rgba(0,212,255,0.05)'; }}
-              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; e.target.style.background = 'rgba(255,255,255,0.04)'; }}
+              onBlur={e => { e.target.style.borderColor = T.authInputBorder; e.target.style.background = T.authInput; }}
             />
 
             {authError && (
@@ -606,15 +606,15 @@ export default function Home() {
         }}>
           <button onClick={() => setMode('single')} style={{
             flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: mode === 'single' ? 'rgba(0,212,255,0.15)' : 'rgba(255,255,255,0.03)',
-            color: mode === 'single' ? '#00d4ff' : 'rgba(255,255,255,0.4)',
+            background: mode === 'single' ? 'rgba(0,212,255,0.15)' : T.bgCard,
+            color: mode === 'single' ? '#00d4ff' : T.textMuted,
             fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             transition: 'all 0.2s ease',
           }}>🎯 Single Agent</button>
           <button onClick={() => setMode('collab')} style={{
             flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: mode === 'collab' ? 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(170,0,255,0.15))' : 'rgba(255,255,255,0.03)',
-            color: mode === 'collab' ? '#00d4ff' : 'rgba(255,255,255,0.4)',
+            background: mode === 'collab' ? 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(170,0,255,0.15))' : T.bgCard,
+            color: mode === 'collab' ? '#00d4ff' : T.textMuted,
             fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             transition: 'all 0.2s ease',
           }}>🦈 Multi-Agent</button>
@@ -638,12 +638,12 @@ export default function Home() {
               style={{
                 width: '100%', padding: '12px', display: 'flex', alignItems: 'center', gap: 10,
                 background: mode === 'collab'
-                  ? (selectedCollabAgents.includes(agent.id) ? `linear-gradient(135deg, ${agent.color}15 0%, ${agent.color}08 100%)` : 'rgba(255,255,255,0.02)')
-                  : (activeAgent.id === agent.id ? `linear-gradient(135deg, ${agent.color}15 0%, ${agent.color}08 100%)` : 'rgba(255,255,255,0.02)'),
+                  ? (selectedCollabAgents.includes(agent.id) ? `linear-gradient(135deg, ${agent.color}15 0%, ${agent.color}08 100%)` : T.bgGlass)
+                  : (activeAgent.id === agent.id ? `linear-gradient(135deg, ${agent.color}15 0%, ${agent.color}08 100%)` : T.bgGlass),
                 border: `1px solid ${
                   mode === 'collab'
-                    ? (selectedCollabAgents.includes(agent.id) ? `${agent.color}50` : 'rgba(255,255,255,0.06)')
-                    : (activeAgent.id === agent.id ? `${agent.color}50` : 'rgba(255,255,255,0.06)')
+                    ? (selectedCollabAgents.includes(agent.id) ? `${agent.color}50` : T.border)
+                    : (activeAgent.id === agent.id ? `${agent.color}50` : T.border)
                 }`,
                 borderRadius: 12, cursor: 'pointer', textAlign: 'left',
                 transition: 'all 0.2s ease', outline: 'none',
@@ -652,7 +652,7 @@ export default function Home() {
               {mode === 'collab' && (
                 <div style={{
                   width: 18, height: 18, borderRadius: 5, flexShrink: 0,
-                  border: `2px solid ${selectedCollabAgents.includes(agent.id) ? agent.color : 'rgba(255,255,255,0.2)'}`,
+                  border: `2px solid ${selectedCollabAgents.includes(agent.id) ? agent.color : T.textMuted}`,
                   background: selectedCollabAgents.includes(agent.id) ? agent.color : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 10, color: '#fff', transition: 'all 0.2s ease',
@@ -668,7 +668,7 @@ export default function Home() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 12, fontWeight: 600,
-                  color: (mode === 'collab' ? selectedCollabAgents.includes(agent.id) : activeAgent.id === agent.id) ? agent.color : '#c0c8d4',
+                  color: (mode === 'collab' ? selectedCollabAgents.includes(agent.id) : activeAgent.id === agent.id) ? agent.color : T.textSecondary,
                 }}>{agent.name}</div>
                 <div style={{
                   fontSize: 9, color: T.textMuted,
@@ -805,7 +805,7 @@ export default function Home() {
                 transition: 'all 0.2s ease',
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.1)'; e.currentTarget.style.color = '#00d4ff'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
               >📄 PDF</button>
               <button onClick={() => {
                 if (mode === 'collab' && collabResults) {
@@ -829,7 +829,7 @@ export default function Home() {
                 transition: 'all 0.2s ease',
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,230,118,0.1)'; e.currentTarget.style.color = '#00e676'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
               >📊 CSV</button>
             </div>
           )}
@@ -872,7 +872,7 @@ export default function Home() {
                         fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.15)'; e.currentTarget.style.color = '#00d4ff'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
                     >{s}</button>
                   ))}
                 </div>
@@ -1012,9 +1012,9 @@ export default function Home() {
                       e.currentTarget.style.color = activeAgent.color;
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                      e.currentTarget.style.color = 'rgba(255,255,255,0.45)';
+                      e.currentTarget.style.background = T.bgCard;
+                      e.currentTarget.style.borderColor = T.border;
+                      e.currentTarget.style.color = T.textMuted;
                     }}
                   >{s}</button>
                 ))}
