@@ -6,17 +6,19 @@ import { AGENTS } from '../lib/agents';
 import { PLANS, getPlan, canUseAgent, canUseCollaboration } from '../lib/pricing';
 import { exportToPDF, exportToCSV } from '../lib/export';
 
-function formatMessage(text) {
+function formatMessage(text, isDark = true) {
   if (!text) return '';
+  const boldColor = isDark ? '#fff' : '#1a2332';
+  const bulletColor = isDark ? 'rgba(0,212,255,0.6)' : 'rgba(0,150,200,0.8)';
   const lines = text.split('\n');
   return lines.map((line, i) => {
     let processed = line.replace(/\*\*(.+?)\*\*/g, (_, m) =>
-      `<strong style="color:#fff;font-weight:600">${m}</strong>`
+      `<strong style="color:${boldColor};font-weight:600">${m}</strong>`
     );
     const isBullet = /^[\s]*[-•]\s/.test(processed);
     if (isBullet) {
       processed = processed.replace(/^[\s]*[-•]\s/, '');
-      return `<div style="padding-left:16px;position:relative;margin:3px 0"><span style="position:absolute;left:0;color:rgba(0,212,255,0.6)">▸</span>${processed}</div>`;
+      return `<div style="padding-left:16px;position:relative;margin:3px 0"><span style="position:absolute;left:0;color:${bulletColor}">▸</span>${processed}</div>`;
     }
     return `<div style="margin:${line.trim() === '' ? '8' : '3'}px 0">${processed}</div>`;
   }).join('');
@@ -394,7 +396,7 @@ export default function Home() {
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>The Blue Shark</h1>
             <p style={{
-              fontSize: 11, color: 'rgba(255,255,255,0.3)',
+              fontSize: 11, color: T.textMuted,
               fontFamily: "'JetBrains Mono', monospace",
               textTransform: 'uppercase', letterSpacing: 2.5,
             }}>AI Multi-Agent Platform</p>
@@ -409,8 +411,8 @@ export default function Home() {
           }}>
             <div style={{
               display: 'flex', gap: 0, marginBottom: 22,
-              background: 'rgba(255,255,255,0.04)', borderRadius: 11,
-              border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden',
+              background: T.bgCard, borderRadius: 11,
+              border: `1px solid ${T.border}`, overflow: 'hidden',
             }}>
               {['login', 'signup'].map(m => (
                 <button key={m} type="button" onClick={() => { setAuthMode(m); setAuthError(''); }}
@@ -430,9 +432,9 @@ export default function Home() {
                 onChange={e => setAuthName(e.target.value)}
                 style={{
                   width: '100%', padding: '13px 16px', marginBottom: 10,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 11, color: '#e0e8f0', fontSize: 14,
+                  background: T.bgCard,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 11, color: T.text, fontSize: 14,
                   fontFamily: "'Outfit', sans-serif", outline: 'none',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
@@ -444,9 +446,9 @@ export default function Home() {
               onChange={e => setAuthEmail(e.target.value)}
               style={{
                 width: '100%', padding: '13px 16px', marginBottom: 10,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 11, color: '#e0e8f0', fontSize: 14,
+                background: T.bgCard,
+                border: `1px solid ${T.border}`,
+                borderRadius: 11, color: T.text, fontSize: 14,
                 fontFamily: "'Outfit', sans-serif", outline: 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
@@ -457,9 +459,9 @@ export default function Home() {
               onChange={e => setAuthPassword(e.target.value)}
               style={{
                 width: '100%', padding: '13px 16px', marginBottom: 18,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 11, color: '#e0e8f0', fontSize: 14,
+                background: T.bgCard,
+                border: `1px solid ${T.border}`,
+                borderRadius: 11, color: T.text, fontSize: 14,
                 fontFamily: "'Outfit', sans-serif", outline: 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
@@ -531,7 +533,7 @@ export default function Home() {
       }}>
         <div style={{
           padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 12,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${T.border}`,
         }}>
           <div style={{ fontSize: 28 }}>🦈</div>
           <div>
@@ -539,7 +541,7 @@ export default function Home() {
               The Blue Shark
             </div>
             <div style={{
-              fontSize: 9, color: 'rgba(255,255,255,0.3)',
+              fontSize: 9, color: T.textMuted,
               textTransform: 'uppercase', letterSpacing: 2,
               fontFamily: "'JetBrains Mono', monospace",
             }}>AI Multi-Agent Platform</div>
@@ -548,7 +550,7 @@ export default function Home() {
 
         {/* User Info */}
         <div style={{
-          padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '12px 16px', borderBottom: `1px solid ${T.border}`,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <div style={{
@@ -558,10 +560,10 @@ export default function Home() {
             fontSize: 14, fontWeight: 700, color: '#fff',
           }}>{(user.user_metadata?.full_name || user.email || '?')[0].toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#e0e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.user_metadata?.full_name || 'User'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 10, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.email}
             </div>
           </div>
@@ -576,7 +578,7 @@ export default function Home() {
         {/* Stats */}
         <div style={{
           padding: '12px 16px', display: 'flex', gap: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${T.border}`,
         }}>
           {[
             { label: 'Agents', value: AGENTS.length, c: '#00d4ff' },
@@ -584,12 +586,12 @@ export default function Home() {
             { label: 'Queries', value: totalQueries, c: '#ff6b35' },
           ].map((s, i) => (
             <div key={i} style={{
-              padding: '8px 10px', background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, flex: 1,
+              padding: '8px 10px', background: T.bgGlass,
+              border: `1px solid ${T.border}`, borderRadius: 10, flex: 1,
             }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: s.c }}>{s.value}</div>
               <div style={{
-                fontSize: 8, color: 'rgba(255,255,255,0.3)', marginTop: 2,
+                fontSize: 8, color: T.textMuted, marginTop: 2,
                 textTransform: 'uppercase', letterSpacing: 1,
                 fontFamily: "'JetBrains Mono', monospace",
               }}>{s.label}</div>
@@ -600,7 +602,7 @@ export default function Home() {
         {/* Mode Switcher */}
         <div style={{
           padding: '12px 10px', display: 'flex', gap: 4,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${T.border}`,
         }}>
           <button onClick={() => setMode('single')} style={{
             flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -621,7 +623,7 @@ export default function Home() {
         {/* Agents List */}
         <div style={{ padding: '12px 10px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
           <div style={{
-            fontSize: 9, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase',
+            fontSize: 9, color: T.textMuted, textTransform: 'uppercase',
             letterSpacing: 2, padding: '0 6px', marginBottom: 4,
             fontFamily: "'JetBrains Mono', monospace",
           }}>{mode === 'collab' ? 'Select Agents (min 2)' : 'AI Agents'}</div>
@@ -669,7 +671,7 @@ export default function Home() {
                   color: (mode === 'collab' ? selectedCollabAgents.includes(agent.id) : activeAgent.id === agent.id) ? agent.color : '#c0c8d4',
                 }}>{agent.name}</div>
                 <div style={{
-                  fontSize: 9, color: 'rgba(255,255,255,0.3)',
+                  fontSize: 9, color: T.textMuted,
                   fontFamily: "'JetBrains Mono', monospace",
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{agent.description}</div>
@@ -686,7 +688,7 @@ export default function Home() {
         </div>
 
         <div style={{
-          padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '12px 16px', borderTop: `1px solid ${T.border}`,
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
           {showInstall && (
@@ -706,7 +708,7 @@ export default function Home() {
             boxShadow: userPlan === 'free' ? '0 4px 16px rgba(0,212,255,0.3)' : 'none',
           }}>{userPlan === 'free' ? '⚡ Upgrade Plan' : `${getPlan(userPlan).icon} ${getPlan(userPlan).name} Plan`}</button>
           <div style={{
-            fontSize: 8, color: 'rgba(255,255,255,0.15)',
+            fontSize: 8, color: T.footerText,
             fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', letterSpacing: 1,
           }}>POWERED BY GPT-4 × BLUE SHARK ENGINE</div>
         </div>
@@ -716,16 +718,16 @@ export default function Home() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 5 }}>
         {/* Header */}
         <div style={{
-          padding: '12px 20px', background: 'rgba(6,13,26,0.6)',
+          padding: '12px 20px', background: T.bgHeader,
           backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: `1px solid ${T.border}`,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
             width: 34, height: 34, borderRadius: 10,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: '#c0c8d4', cursor: 'pointer',
+            background: T.bgCard,
+            border: `1px solid ${T.border}`,
+            color: T.textSecondary, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
           }}>☰</button>
           {mode === 'collab' ? (
@@ -797,8 +799,8 @@ export default function Home() {
                 }
               }} style={{
                 padding: '5px 10px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                color: 'rgba(255,255,255,0.5)', fontSize: 10, cursor: 'pointer',
+                background: T.bgCard, border: `1px solid ${T.border}`,
+                color: T.textMuted, fontSize: 10, cursor: 'pointer',
                 fontFamily: "'JetBrains Mono', monospace",
                 transition: 'all 0.2s ease',
               }}
@@ -821,8 +823,8 @@ export default function Home() {
                 }
               }} style={{
                 padding: '5px 10px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                color: 'rgba(255,255,255,0.5)', fontSize: 10, cursor: 'pointer',
+                background: T.bgCard, border: `1px solid ${T.border}`,
+                color: T.textMuted, fontSize: 10, cursor: 'pointer',
                 fontFamily: "'JetBrains Mono', monospace",
                 transition: 'all 0.2s ease',
               }}
@@ -854,7 +856,7 @@ export default function Home() {
                   Multi-Agent Collaboration
                 </div>
                 <div style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.4)',
+                  fontSize: 13, color: T.textMuted,
                   textAlign: 'center', maxWidth: 420, lineHeight: 1.6, marginBottom: 28,
                 }}>
                   Kirim satu pertanyaan, beberapa agen AI bekerja bareng dan memberikan analisis dari berbagai sudut pandang. Hasilnya digabung jadi satu laporan komprehensif.
@@ -864,9 +866,9 @@ export default function Home() {
                     <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
                       style={{
                         padding: '8px 14px', borderRadius: 20,
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.45)', fontSize: 12, cursor: 'pointer',
+                        background: T.bgCard,
+                        border: `1px solid ${T.border}`,
+                        color: T.textMuted, fontSize: 12, cursor: 'pointer',
                         fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.15)'; e.currentTarget.style.color = '#00d4ff'; }}
@@ -881,7 +883,7 @@ export default function Home() {
                   <div style={{ textAlign: 'center', padding: 40, animation: 'fadeInUp 0.3s ease-out' }}>
                     <div style={{ fontSize: 40, marginBottom: 16 }}>🦈</div>
                     <div style={{ fontSize: 15, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>Multi-Agent Collaboration in Progress...</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: "'JetBrains Mono', monospace" }}>
+                    <div style={{ fontSize: 12, color: T.textMuted, fontFamily: "'JetBrains Mono', monospace" }}>
                       {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agents` : 'Auto-selected agents'} working together
                     </div>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16 }}>
@@ -905,7 +907,7 @@ export default function Home() {
                         background: 'linear-gradient(135deg, rgba(0,212,255,0.15) 0%, rgba(0,87,255,0.15) 100%)',
                         border: '1px solid rgba(0,212,255,0.25)',
                         borderRadius: '18px 18px 4px 18px',
-                        color: '#d0d8e4', fontSize: 14, lineHeight: 1.7,
+                        color: T.msgText, fontSize: 14, lineHeight: 1.7,
                       }}>{collabResults.query}</div>
                     </div>
 
@@ -936,8 +938,8 @@ export default function Home() {
                           marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}>🦈 EXECUTIVE SUMMARY</div>
-                        <div style={{ color: '#d0d8e4', fontSize: 14, lineHeight: 1.7, wordBreak: 'break-word' }}
-                          dangerouslySetInnerHTML={{ __html: formatMessage(collabResults.executiveSummary) }}
+                        <div style={{ color: T.msgText, fontSize: 14, lineHeight: 1.7, wordBreak: 'break-word' }}
+                          dangerouslySetInnerHTML={{ __html: formatMessage(collabResults.executiveSummary, theme === 'dark') }}
                         />
                       </div>
                     )}
@@ -946,7 +948,7 @@ export default function Home() {
                     {collabResults.agentResults.map((result, i) => (
                       <div key={i} style={{
                         padding: '16px 18px', marginBottom: 12,
-                        background: 'rgba(255,255,255,0.03)',
+                        background: T.bgCard,
                         border: `1px solid ${result.agentColor || 'rgba(255,255,255,0.08)'}25`,
                         borderRadius: 14,
                       }}>
@@ -955,8 +957,8 @@ export default function Home() {
                           marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}>{result.agentIcon} {result.agentName}</div>
-                        <div style={{ color: '#d0d8e4', fontSize: 13, lineHeight: 1.7, wordBreak: 'break-word' }}
-                          dangerouslySetInnerHTML={{ __html: formatMessage(result.content) }}
+                        <div style={{ color: T.msgText, fontSize: 13, lineHeight: 1.7, wordBreak: 'break-word' }}
+                          dangerouslySetInnerHTML={{ __html: formatMessage(result.content, theme === 'dark') }}
                         />
                       </div>
                     ))}
@@ -991,7 +993,7 @@ export default function Home() {
                 {activeAgent.name} Agent
               </div>
               <div style={{
-                fontSize: 13, color: 'rgba(255,255,255,0.4)',
+                fontSize: 13, color: T.textMuted,
                 textAlign: 'center', maxWidth: 380, lineHeight: 1.6, marginBottom: 28,
               }}>{activeAgent.description}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 460 }}>
@@ -999,9 +1001,9 @@ export default function Home() {
                   <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
                     style={{
                       padding: '8px 14px', borderRadius: 20,
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.45)', fontSize: 12, cursor: 'pointer',
+                      background: T.bgCard,
+                      border: `1px solid ${T.border}`,
+                      color: T.textMuted, fontSize: 12, cursor: 'pointer',
                       fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={e => {
@@ -1043,7 +1045,7 @@ export default function Home() {
                       <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.content}</span>
                     ) : (
                       <div style={{ wordBreak: 'break-word' }}
-                        dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }}
+                        dangerouslySetInnerHTML={{ __html: formatMessage(msg.content, theme === 'dark') }}
                       />
                     )}
                   </div>
@@ -1058,7 +1060,7 @@ export default function Home() {
                     }} />
                   ))}
                   <span style={{
-                    marginLeft: 8, fontSize: 13, color: 'rgba(255,255,255,0.4)',
+                    marginLeft: 8, fontSize: 13, color: T.textMuted,
                     fontFamily: "'JetBrains Mono', monospace",
                   }}>Blue Shark is thinking...</span>
                 </div>
@@ -1103,7 +1105,7 @@ export default function Home() {
           </div>
           <div style={{
             textAlign: 'center', marginTop: 8, fontSize: 9,
-            color: 'rgba(255,255,255,0.15)',
+            color: T.footerText,
             fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1.5,
           }}>THE BLUE SHARK v1.0 — AI MULTI-AGENT PLATFORM — PREDATOR EDITION</div>
         </div>
@@ -1120,7 +1122,7 @@ export default function Home() {
           <div style={{
             width: '100%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto',
             background: 'linear-gradient(180deg, #0a1628 0%, #0d1f3c 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: `1px solid ${T.border}`,
             borderRadius: 24, padding: '40px 30px',
             animation: 'modalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             boxShadow: '0 40px 80px rgba(0,0,0,0.5)',
@@ -1130,7 +1132,7 @@ export default function Home() {
               <h2 style={{ fontSize: 24, fontWeight: 800, color: '#00d4ff', marginBottom: 8 }}>
                 Pilih Paket Anda
               </h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', maxWidth: 400, margin: '0 auto' }}>
+              <p style={{ fontSize: 13, color: T.textMuted, maxWidth: 400, margin: '0 auto' }}>
                 Upgrade untuk akses penuh ke semua agen AI, multi-agent collaboration, dan fitur premium lainnya.
               </p>
             </div>
@@ -1161,10 +1163,10 @@ export default function Home() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                     <span style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>{plan.priceLabel}</span>
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{plan.period}</span>
+                    <span style={{ fontSize: 13, color: T.textMuted }}>{plan.period}</span>
                   </div>
                   {plan.priceUsd && plan.price > 0 && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 16 }}>
                       ≈ {plan.priceUsd}/bulan
                     </div>
                   )}
@@ -1209,7 +1211,7 @@ export default function Home() {
             <button onClick={() => setShowPricing(false)} style={{
               display: 'block', margin: '24px auto 0', padding: '8px 24px',
               background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: 12,
+              borderRadius: 10, color: T.textMuted, fontSize: 12,
               cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
             }}>Tutup</button>
           </div>
