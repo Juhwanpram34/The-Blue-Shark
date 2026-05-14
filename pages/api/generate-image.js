@@ -16,70 +16,74 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Try gpt-image-1 (newest model)
-    let response = await fetch('https://api.openai.com/v1/images/generations', {
+    // Use GPT-4o to generate image (works on most tiers)
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: prompt,
-        n: 1,
-        size: size,
-        response_format: 'url',
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: `Create a detailed, professional image based on this description: ${prompt}. Make it high quality, visually appealing, and suitable for business use.`,
+          },
+        ],
+        max_tokens: 1000,
       }),
     });
 
-    let data = await response.json();
-
-    // If gpt-image-1 fails, try dall-e-3
-    if (data.error) {
-      response = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: prompt,
-          n: 1,
-          size: '1024x1024',
-          response_format: 'url',
-        }),
-      });
-      data = await response.json();
-    }
-
-    // If dall-e-3 fails, try dall-e-2
-    if (data.error) {
-      response = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'dall-e-2',
-          prompt: prompt,
-          n: 1,
-          size: '1024x1024',
-          response_format: 'url',
-        }),
-      });
-      data = await response.json();
-    }
+    const data = await response.json();
 
     if (data.error) {
       return res.status(500).json({ error: data.error.message });
     }
 
-    return res.status(200).json({
-      success: true,
-      url: data.data?.[0]?.url,
-      revisedPrompt: data.data?.[0]?.revised_prompt,
+    // GPT-4o returns text description, not actual image
+    // So we use a different approach - try the images endpoint with available models
+    const models = ['gpt-image-1', 'dall-e-3', 'dall-e-2'];
+    
+    for (const model of models) {
+      try {
+        const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            prompt: prompt,
+            n: 1,
+            size: model === 'dall-e-2' ? '512x512' : '1024x1024',
+          }),
+        });
+
+        const imgData = await imgRes.json();
+
+        if (!imgData.error && imgData.data?.[0]) {
+          const imageItem = imgData.data[0];
+          const imageUrl = imageItem.url || (imageItem.b64_json ? `data:image/png;base64,${imageItem.b64_json}` : null);
+          
+          if (imageUrl) {
+            return res.status(200).json({
+              success: true,
+              url: imageUrl,
+              revisedPrompt: imageItem.revised_prompt || prompt,
+              model: model,
+            });
+          }
+        }
+      } catch (modelError) {
+        console.log(`Model ${model} failed, trying next...`);
+        continue;
+      }
+    }
+
+    return res.status(500).json({ 
+      error: 'Image generation tidak tersedia di akun Anda. Silakan upgrade plan OpenAI atau top up credit.' 
     });
   } catch (error) {
     console.error('Image generation error:', error);
