@@ -12,7 +12,11 @@ function formatMessage(text, isDark = true) {
   const bulletColor = isDark ? 'rgba(0,212,255,0.6)' : 'rgba(0,150,200,0.8)';
   const lines = text.split('\n');
   return lines.map((line, i) => {
-    let processed = line.replace(/\*\*(.+?)\*\*/g, (_, m) =>
+    // Image markdown: ![alt](url)
+    let processed = line.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
+      `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:12px;margin:8px 0;" />`
+    );
+    processed = processed.replace(/\*\*(.+?)\*\*/g, (_, m) =>
       `<strong style="color:${boldColor};font-weight:600">${m}</strong>`
     );
     const isBullet = /^[\s]*[-•]\s/.test(processed);
@@ -46,6 +50,8 @@ export default function Home() {
   const [collabHistory, setCollabHistory] = useState([]);
   const [selectedCollabAgents, setSelectedCollabAgents] = useState([]);
   const [showPricing, setShowPricing] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
   const [userPlan, setUserPlan] = useState('free');
   const [queriesUsed, setQueriesUsed] = useState(0);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -189,6 +195,177 @@ export default function Home() {
     } catch (e) { console.error('Plan fetch error:', e); }
   };
 
+  // Load saved conversations from database
+  const loadSavedChats = async (userId) => {
+    try {
+      const { data: convos } = await supabase
+        .from('conversations')
+        .select('id, agent_id, title, updated_at')
+        .eq('user_id', userId)
+        .eq('is_archived', false)
+        .order('updated_at', { ascending: false });
+
+      if (convos && convos.length > 0) {
+        const loaded = {};
+        for (const convo of convos) {
+          const { data: msgs } = await supabase
+            .from('messages')
+            .select('role, content, created_at')
+            .eq('conversation_id', convo.id)
+            .order('created_at', { ascending: true });
+
+          if (msgs && msgs.length > 0) {
+            loaded[convo.agent_id] = msgs.map(m => ({ role: m.role, content: m.content }));
+          }
+        }
+        if (Object.keys(loaded).length > 0) {
+          setConversations(prev => ({ ...prev, ...loaded }));
+        }
+      }
+    } catch (e) { console.error('Load chats error:', e); }
+  };
+
+  // Save conversation to database
+  const saveToDatabase = async (agentId, messages) => {
+    if (!user || messages.length < 2) return;
+    try {
+      // Check if conversation exists for this agent
+      let { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('agent_id', agentId)
+        .eq('is_archived', false)
+        .single();
+
+      let conversationId;
+      const title = messages.find(m => m.role === 'user')?.content?.substring(0, 100) || 'Untitled';
+
+      if (existing) {
+        conversationId = existing.id;
+        await supabase.from('conversations').update({ title, updated_at: new Date().toISOString() }).eq('id', conversationId);
+        // Delete old messages and re-insert
+        await supabase.from('messages').delete().eq('conversation_id', conversationId);
+      } else {
+        const { data: newConvo } = await supabase
+          .from('conversations')
+          .insert({ user_id: user.id, agent_id: agentId, title })
+          .select('id')
+          .single();
+        conversationId = newConvo?.id;
+      }
+
+      if (conversationId) {
+        const msgRows = messages.map(m => ({
+          conversation_id: conversationId,
+          role: m.role,
+          content: m.content,
+        }));
+        await supabase.from('messages').insert(msgRows);
+      }
+
+      // Update queries_used in profile
+      await supabase
+        .from('profiles')
+        .update({ queries_used: queriesUsed + 1 })
+        .eq('id', user.id);
+
+    } catch (e) { console.error('Save chat error:', e); }
+  };
+
+  // Load chats when user logs in
+  useEffect(() => {
+    if (user) loadSavedChats(user.id);
+  }, [user]);
+
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
+    if (!user) return;
+    try {
+      // Get all conversations
+      const { data: convos } = await supabase
+        .from('conversations')
+        .select('id, agent_id, created_at, updated_at')
+        .eq('user_id', user.id);
+
+      // Get all messages count
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('id, conversation_id, role, created_at')
+        .in('conversation_id', (convos || []).map(c => c.id));
+
+      // Get profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan, queries_used, queries_limit, created_at')
+        .eq('id', user.id)
+        .single();
+
+      // Calculate stats
+      const totalConversations = convos?.length || 0;
+      const totalMessages = msgs?.filter(m => m.role === 'user')?.length || 0;
+      const totalResponses = msgs?.filter(m => m.role === 'assistant')?.length || 0;
+
+      // Agent usage breakdown
+      const agentUsage = {};
+      (convos || []).forEach(c => {
+        agentUsage[c.agent_id] = (agentUsage[c.agent_id] || 0) + 1;
+      });
+
+      // Most used agent
+      const topAgentId = Object.entries(agentUsage).sort((a, b) => b[1] - a[1])[0]?.[0];
+      const topAgent = AGENTS.find(a => a.id === topAgentId);
+
+      // Daily usage (last 7 days)
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const count = (msgs || []).filter(m => m.role === 'user' && m.created_at?.startsWith(dateStr)).length;
+        last7Days.push({ date: date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }), count });
+      }
+
+      setAnalyticsData({
+        totalConversations,
+        totalMessages,
+        totalResponses,
+        agentUsage,
+        topAgent: topAgent?.name || '-',
+        topAgentIcon: topAgent?.icon || '🦈',
+        queriesUsed: profile?.queries_used || 0,
+        queriesLimit: profile?.queries_limit || 10,
+        plan: profile?.plan || 'free',
+        memberSince: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-',
+        last7Days,
+      });
+      setShowAnalytics(true);
+    } catch (e) {
+      console.error('Analytics error:', e);
+    }
+  };
+
+  // Clear chat for current agent
+  const clearChat = async (agentId) => {
+    if (!confirm('Hapus riwayat chat untuk agen ini?')) return;
+    setConversations(prev => ({ ...prev, [agentId]: [] }));
+    if (user) {
+      try {
+        const { data: convo } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('agent_id', agentId)
+          .eq('is_archived', false)
+          .single();
+        if (convo) {
+          await supabase.from('messages').delete().eq('conversation_id', convo.id);
+          await supabase.from('conversations').delete().eq('id', convo.id);
+        }
+      } catch (e) { console.error('Clear chat error:', e); }
+    }
+  };
+
   // Check payment success from URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -275,28 +452,56 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
-    const userMessage = { role: 'user', content: input.trim() };
+    const userInput = input.trim();
+    const userMessage = { role: 'user', content: userInput };
     const updatedMessages = [...currentMessages, userMessage];
     setConversations(prev => ({ ...prev, [activeAgent.id]: updatedMessages }));
     setInput('');
     setIsLoading(true);
 
+    // Check if user wants to generate an image
+    const isImageRequest = /^(\/gambar|\/image|generate image|buat gambar|buatkan gambar|generate foto)/i.test(userInput);
+
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          agentId: activeAgent.id,
-        }),
-      });
-      const data = await res.json();
-      const content = data.content || data.error || 'Maaf, terjadi kesalahan.';
-      setConversations(prev => ({
-        ...prev,
-        [activeAgent.id]: [...updatedMessages, { role: 'assistant', content }],
-      }));
-      setTotalQueries(prev => prev + 1);
+      if (isImageRequest) {
+        const imagePrompt = userInput.replace(/^(\/gambar|\/image|generate image|buat gambar|buatkan gambar|generate foto)\s*/i, '');
+        const res = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: imagePrompt || userInput }),
+        });
+        const data = await res.json();
+        let content;
+        if (data.success && data.url) {
+          content = `🎨 **Gambar berhasil dibuat!**\n\n![Generated Image](${data.url})\n\n**Prompt:** ${data.revisedPrompt || imagePrompt}\n**Model:** ${data.model}`;
+        } else {
+          content = `⚠️ Gagal membuat gambar: ${data.error || 'Unknown error'}`;
+        }
+        const finalMessages = [...updatedMessages, { role: 'assistant', content }];
+        setConversations(prev => ({ ...prev, [activeAgent.id]: finalMessages }));
+        setTotalQueries(prev => prev + 1);
+        setQueriesUsed(prev => prev + 1);
+        saveToDatabase(activeAgent.id, finalMessages);
+      } else {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: updatedMessages,
+            agentId: activeAgent.id,
+          }),
+        });
+        const data = await res.json();
+        const content = data.content || data.error || 'Maaf, terjadi kesalahan.';
+        const finalMessages = [...updatedMessages, { role: 'assistant', content }];
+        setConversations(prev => ({
+          ...prev,
+          [activeAgent.id]: finalMessages,
+        }));
+        setTotalQueries(prev => prev + 1);
+        setQueriesUsed(prev => prev + 1);
+        saveToDatabase(activeAgent.id, finalMessages);
+      }
     } catch (error) {
       setConversations(prev => ({
         ...prev,
@@ -702,6 +907,13 @@ export default function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}>📲 Install Aplikasi</button>
           )}
+          <button onClick={fetchAnalytics} style={{
+            width: '100%', padding: '10px 0', borderRadius: 10,
+            border: `1px solid ${T.border}`,
+            background: T.bgCard, cursor: 'pointer',
+            color: T.textSecondary, fontSize: 11, fontWeight: 600,
+            fontFamily: "'Outfit', sans-serif",
+          }}>📊 Dashboard Analytics</button>
           <button onClick={() => setShowPricing(true)} style={{
             width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
             background: userPlan === 'free' ? 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)' : `${getPlan(userPlan).color}15`,
@@ -833,6 +1045,18 @@ export default function Home() {
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,230,118,0.1)'; e.currentTarget.style.color = '#00e676'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
               >📊 CSV</button>
+              {mode === 'single' && (
+                <button onClick={() => clearChat(activeAgent.id)} style={{
+                  padding: '5px 10px', borderRadius: 8,
+                  background: T.bgCard, border: `1px solid ${T.border}`,
+                  color: T.textMuted, fontSize: 10, cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: 'all 0.2s ease',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,23,68,0.1)'; e.currentTarget.style.color = '#ff1744'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
+                >🗑️ Hapus</button>
+              )}
             </div>
           )}
         </div>
@@ -1112,6 +1336,121 @@ export default function Home() {
           }}>THE BLUE SHARK v1.0 — AI MULTI-AGENT PLATFORM — PREDATOR EDITION</div>
         </div>
       </div>
+
+      {/* Analytics Modal */}
+      {showAnalytics && analyticsData && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: T.modalOverlay, backdropFilter: 'blur(12px)',
+          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20, animation: 'overlayIn 0.3s ease-out',
+        }} onClick={() => setShowAnalytics(false)}>
+          <div style={{
+            width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto',
+            background: T.modalBg,
+            border: `1px solid ${T.border}`,
+            borderRadius: 24, padding: '36px 30px',
+            animation: 'modalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.3)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📊</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#00d4ff', marginBottom: 6 }}>
+                Dashboard Analytics
+              </h2>
+              <p style={{ fontSize: 12, color: T.textMuted }}>
+                Member sejak {analyticsData.memberSince} · Paket {analyticsData.plan.toUpperCase()}
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+              {[
+                { value: analyticsData.totalMessages, label: 'Total Queries', color: '#00d4ff' },
+                { value: analyticsData.totalResponses, label: 'Total Respons', color: '#00e676' },
+                { value: analyticsData.totalConversations, label: 'Percakapan', color: '#ff6b35' },
+                { value: `${analyticsData.queriesUsed}/${analyticsData.queriesLimit === -1 ? '∞' : analyticsData.queriesLimit}`, label: 'Query Hari Ini', color: '#aa00ff' },
+              ].map((s, i) => (
+                <div key={i} style={{
+                  padding: '16px 12px', background: T.statBg,
+                  border: `1px solid ${T.statBorder}`, borderRadius: 14, textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 9, color: T.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Top Agent */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg,
+              border: `1px solid ${T.statBorder}`, borderRadius: 14, marginBottom: 16,
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={{ fontSize: 28 }}>{analyticsData.topAgentIcon}</div>
+              <div>
+                <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" }}>Agen Favorit</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#00d4ff' }}>{analyticsData.topAgent}</div>
+              </div>
+            </div>
+
+            {/* Agent Usage Breakdown */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg,
+              border: `1px solid ${T.statBorder}`, borderRadius: 14, marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>Penggunaan Per Agen</div>
+              {AGENTS.map(agent => {
+                const count = analyticsData.agentUsage[agent.id] || 0;
+                const maxCount = Math.max(...Object.values(analyticsData.agentUsage), 1);
+                const width = (count / maxCount) * 100;
+                return (
+                  <div key={agent.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>{agent.icon}</span>
+                    <span style={{ fontSize: 11, color: T.textSecondary, width: 120, flexShrink: 0 }}>{agent.name}</span>
+                    <div style={{ flex: 1, height: 6, background: T.bgCard, borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${width}%`, height: '100%', background: agent.gradient, borderRadius: 3, transition: 'width 0.5s ease' }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: agent.color, fontWeight: 600, width: 20, textAlign: 'right' }}>{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 7-Day Activity */}
+            <div style={{
+              padding: '16px 20px', background: T.statBg,
+              border: `1px solid ${T.statBorder}`, borderRadius: 14, marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>Aktivitas 7 Hari Terakhir</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80 }}>
+                {analyticsData.last7Days.map((day, i) => {
+                  const maxCount = Math.max(...analyticsData.last7Days.map(d => d.count), 1);
+                  const height = (day.count / maxCount) * 60 + 4;
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 9, color: '#00d4ff', fontWeight: 600 }}>{day.count}</span>
+                      <div style={{
+                        width: '100%', height, borderRadius: 4,
+                        background: day.count > 0 ? 'linear-gradient(180deg, #00d4ff, #0057ff)' : T.bgCard,
+                        transition: 'height 0.5s ease',
+                      }} />
+                      <span style={{ fontSize: 8, color: T.textMuted }}>{day.date}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button onClick={() => setShowAnalytics(false)} style={{
+              display: 'block', margin: '0 auto', padding: '8px 24px',
+              background: 'transparent', border: `1px solid ${T.border}`,
+              borderRadius: 10, color: T.textMuted, fontSize: 12,
+              cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+            }}>Tutup</button>
+          </div>
+        </div>
+      )}
 
       {/* Pricing Modal */}
       {showPricing && (
