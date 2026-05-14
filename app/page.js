@@ -58,6 +58,7 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [isMobile, setIsMobile] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -138,6 +139,18 @@ export default function Home() {
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('bs-theme') : null;
     if (saved) setTheme(saved);
+  }, []);
+
+  // Mobile detection
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const toggleTheme = () => {
@@ -830,7 +843,7 @@ export default function Home() {
         display: 'flex', flexDirection: 'column',
         transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         overflow: 'hidden', zIndex: 10,
-        position: typeof window !== 'undefined' && window.innerWidth < 768 ? 'absolute' : 'relative',
+        position: isMobile ? 'absolute' : 'relative',
         boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.3)' : 'none',
       }}>
         <div style={{
@@ -943,6 +956,7 @@ export default function Home() {
                 toggleCollabAgent(agent.id);
               } else {
                 setActiveAgent(agent);
+                if (isMobile) setSidebarOpen(false);
               }
             }}
               style={{
@@ -1031,11 +1045,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', zIndex: 9, backdropFilter: 'blur(4px)',
+        }} />
+      )}
+
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 5 }}>
         {/* Header */}
         <div style={{
-          padding: '12px 20px', background: T.bgHeader,
+          padding: isMobile ? '10px 12px' : '12px 20px', background: T.bgHeader,
           backdropFilter: 'blur(20px)',
           borderBottom: `1px solid ${T.border}`,
           display: 'flex', alignItems: 'center', gap: 12,
@@ -1165,7 +1187,7 @@ export default function Home() {
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '12px' : '20px' }}>
           {mode === 'collab' ? (
             /* COLLABORATION MODE */
             !collabResults && !isLoading ? (
@@ -1431,7 +1453,7 @@ export default function Home() {
         </div>
 
         {/* Input */}
-        <div style={{ padding: '14px 20px 20px', background: 'linear-gradient(180deg, transparent 0%, rgba(6,13,26,0.8) 100%)' }}>
+        <div style={{ padding: isMobile ? '10px 12px 14px' : '14px 20px 20px', background: 'linear-gradient(180deg, transparent 0%, rgba(6,13,26,0.8) 100%)' }}>
           <div style={{
             display: 'flex', gap: 10, alignItems: 'flex-end',
             background: T.inputBg,
