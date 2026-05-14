@@ -1377,12 +1377,13 @@ export default function Home() {
                       opacity: 0, transition: 'opacity 0.2s ease',
                     }}>✕</button>
                     {msg.role === 'assistant' && (
-                      <button className="del-btn" onClick={() => {
-                        navigator.clipboard.writeText(msg.content.replace(/\*\*/g, '').replace(/^[\s]*[-•]\s/gm, '• '));
-                        const btn = event.currentTarget;
-                        btn.textContent = '✓';
-                        btn.style.color = '#00e676';
-                        setTimeout(() => { btn.textContent = '📋'; btn.style.color = T.textMuted; }, 1500);
+                      <button className="del-btn" onClick={(e) => {
+                        const cleanText = msg.content.replace(/\*\*/g, '').replace(/^[\s]*[-•]\s/gm, '• ');
+                        navigator.clipboard.writeText(cleanText);
+                        e.currentTarget.textContent = '✓';
+                        e.currentTarget.style.color = '#00e676';
+                        const target = e.currentTarget;
+                        setTimeout(() => { target.textContent = '📋'; target.style.color = T.textMuted; }, 1500);
                       }} style={{
                         position: 'absolute', top: 6, right: 32,
                         width: 22, height: 22, borderRadius: 6,
