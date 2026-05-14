@@ -366,6 +366,27 @@ export default function Home() {
     }
   };
 
+  // Delete individual message pair (user + assistant response)
+  const deleteMessage = (agentId, messageIndex) => {
+    setConversations(prev => {
+      const msgs = [...(prev[agentId] || [])];
+      const msg = msgs[messageIndex];
+      if (msg.role === 'user') {
+        // Delete user message and its response (next message)
+        msgs.splice(messageIndex, messageIndex + 1 < msgs.length && msgs[messageIndex + 1].role === 'assistant' ? 2 : 1);
+      } else {
+        // Delete assistant message and its question (previous message)
+        const start = messageIndex > 0 && msgs[messageIndex - 1].role === 'user' ? messageIndex - 1 : messageIndex;
+        msgs.splice(start, start === messageIndex ? 1 : 2);
+      }
+      // Save updated messages to database
+      if (user && msgs.length > 0) {
+        saveToDatabase(agentId, msgs);
+      }
+      return { ...prev, [agentId]: msgs };
+    });
+  };
+
   // Check payment success from URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -844,7 +865,7 @@ export default function Home() {
             fontSize: 9, color: T.textMuted, textTransform: 'uppercase',
             letterSpacing: 2, padding: '0 6px', marginBottom: 4,
             fontFamily: "'JetBrains Mono', monospace",
-          }}>{mode === 'collab' ? 'Select Agents (min 2)' : 'AI Agents'}</div>
+          }}>{mode === 'collab' ? 'Pilih Agen (min 2)' : 'AI Agents'}</div>
           {AGENTS.map(agent => (
             <button key={agent.id} onClick={() => {
               if (mode === 'collab') {
@@ -935,7 +956,7 @@ export default function Home() {
           <div style={{
             fontSize: 8, color: T.footerText,
             fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', letterSpacing: 1,
-          }}>POWERED BY GPT-4 × BLUE SHARK ENGINE</div>
+          }}>DIDUKUNG OLEH GPT-4 × BLUE SHARK ENGINE</div>
         </div>
       </div>
 
@@ -968,7 +989,7 @@ export default function Home() {
                 <div style={{
                   fontSize: 10, color: '#00d4ff',
                   fontFamily: "'JetBrains Mono', monospace",
-                }}>● {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agents selected` : 'Auto-select mode'}</div>
+                }}>● {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agen dipilih` : 'Mode otomatis'}</div>
               </div>
             </>
           ) : (
@@ -984,7 +1005,7 @@ export default function Home() {
                 <div style={{
                   fontSize: 10, color: activeAgent.color,
                   fontFamily: "'JetBrains Mono', monospace",
-                }}>● Online — Ready to analyze</div>
+                }}>● Online — Siap menganalisis</div>
               </div>
             </>
           )}
@@ -1001,7 +1022,7 @@ export default function Home() {
             background: `${activeAgent.color}12`, border: `1px solid ${activeAgent.color}25`,
             fontSize: 10, color: activeAgent.color,
             fontFamily: "'JetBrains Mono', monospace",
-          }}>{currentMessages.filter(m => m.role === 'user').length} queries</div>
+          }}>{currentMessages.filter(m => m.role === 'user').length} pertanyaan</div>
           {/* Export Buttons */}
           {((mode === 'single' && currentMessages.length > 0) || (mode === 'collab' && collabResults && !collabResults.error)) && (
             <div style={{ display: 'flex', gap: 4 }}>
@@ -1119,9 +1140,9 @@ export default function Home() {
                 {isLoading && (
                   <div style={{ textAlign: 'center', padding: 40, animation: 'fadeInUp 0.3s ease-out' }}>
                     <div style={{ fontSize: 40, marginBottom: 16 }}>🦈</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>Multi-Agent Collaboration in Progress...</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>Kolaborasi Multi-Agen Sedang Berjalan...</div>
                     <div style={{ fontSize: 12, color: T.textMuted, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agents` : 'Auto-selected agents'} working together
+                      {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agents` : 'Agen otomatis terpilih'} working together
                     </div>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16 }}>
                       {[0, 1, 2].map(i => (
@@ -1174,7 +1195,7 @@ export default function Home() {
                           fontSize: 11, fontWeight: 600, color: '#00d4ff',
                           marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5,
                           fontFamily: "'JetBrains Mono', monospace",
-                        }}>🦈 EXECUTIVE SUMMARY</div>
+                        }}>🦈 RINGKASAN EKSEKUTIF</div>
                         <div style={{ color: T.msgText, fontSize: 14, lineHeight: 1.7, wordBreak: 'break-word' }}
                           dangerouslySetInnerHTML={{ __html: formatMessage(collabResults.executiveSummary, theme === 'dark') }}
                         />
@@ -1263,6 +1284,7 @@ export default function Home() {
                 <div key={i} style={{
                   display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
                   marginBottom: 16, animation: 'fadeInUp 0.3s ease-out',
+                  position: 'relative', group: 'message',
                 }}>
                   <div style={{
                     maxWidth: '82%', padding: '14px 18px',
@@ -1270,7 +1292,19 @@ export default function Home() {
                     border: `1px solid ${msg.role === 'user' ? T.msgUserBorder : T.msgBotBorder}`,
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     color: T.msgText, fontSize: 14, lineHeight: 1.7,
-                  }}>
+                    position: 'relative',
+                  }}
+                    onMouseEnter={e => { const btn = e.currentTarget.querySelector('.del-btn'); if (btn) btn.style.opacity = '1'; }}
+                    onMouseLeave={e => { const btn = e.currentTarget.querySelector('.del-btn'); if (btn) btn.style.opacity = '0'; }}
+                  >
+                    <button className="del-btn" onClick={() => deleteMessage(activeAgent.id, i)} style={{
+                      position: 'absolute', top: 6, right: 6,
+                      width: 22, height: 22, borderRadius: 6,
+                      background: 'rgba(255,23,68,0.15)', border: 'none',
+                      color: '#ff1744', fontSize: 10, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: 0, transition: 'opacity 0.2s ease',
+                    }}>✕</button>
                     {msg.role !== 'user' && (
                       <div style={{
                         fontSize: 10, fontWeight: 600, color: activeAgent.color,
@@ -1299,7 +1333,7 @@ export default function Home() {
                   <span style={{
                     marginLeft: 8, fontSize: 13, color: T.textMuted,
                     fontFamily: "'JetBrains Mono', monospace",
-                  }}>Blue Shark is thinking...</span>
+                  }}>Blue Shark sedang berpikir...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
