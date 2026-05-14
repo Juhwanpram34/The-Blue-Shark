@@ -460,11 +460,22 @@ export default function Home() {
     setIsLoading(true);
 
     // Check if user wants to generate an image
-    const isImageRequest = /^(\/gambar|\/image|generate image|buat gambar|buatkan gambar|generate foto)/i.test(userInput);
+    const lowerInput = userInput.toLowerCase();
+    const isImageRequest = lowerInput.startsWith('/gambar') || 
+      lowerInput.startsWith('/image') || 
+      lowerInput.startsWith('gambar ') ||
+      lowerInput.startsWith('buat gambar') || 
+      lowerInput.startsWith('buatkan gambar') || 
+      lowerInput.startsWith('generate image') || 
+      lowerInput.startsWith('generate foto') ||
+      lowerInput.startsWith('bikin gambar') ||
+      lowerInput.startsWith('tolong buatkan gambar') ||
+      lowerInput.includes('buatkan gambar') ||
+      lowerInput.includes('generate image');
 
     try {
       if (isImageRequest) {
-        const imagePrompt = userInput.replace(/^(\/gambar|\/image|generate image|buat gambar|buatkan gambar|generate foto)\s*/i, '');
+        const imagePrompt = userInput.replace(/^(\/gambar|\/image|gambar|buat gambar|buatkan gambar|bikin gambar|generate image|generate foto|tolong buatkan gambar)\s*/i, '');
         const res = await fetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
