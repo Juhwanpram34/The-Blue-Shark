@@ -59,6 +59,9 @@ export default function Home() {
   const [showInstall, setShowInstall] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [isMobile, setIsMobile] = useState(false);
+  const [chatHistory, setChatHistory] = useState({}); // { agent_id: [{ id, title, updated_at }] }
+  const [activeConvoId, setActiveConvoId] = useState({}); // { agent_id: convo_id }
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -250,20 +253,33 @@ export default function Home() {
       if (convosError) { console.error('Load convos error:', convosError); return; }
 
       if (convos && convos.length > 0) {
+        // Build chat history grouped by agent
+        const history = {};
+        const activeIds = {};
+        convos.forEach(c => {
+          if (!history[c.agent_id]) history[c.agent_id] = [];
+          history[c.agent_id].push({ id: c.id, title: c.title || 'Chat tanpa judul', updated_at: c.updated_at });
+        });
+        setChatHistory(history);
+
+        // Load messages for most recent conversation per agent
         const loaded = {};
-        for (const convo of convos) {
+        for (const agentId of Object.keys(history)) {
+          const latestConvo = history[agentId][0]; // already sorted desc
+          activeIds[agentId] = latestConvo.id;
           const { data: msgs, error: msgsError } = await supabase
             .from('messages')
             .select('role, content, created_at')
-            .eq('conversation_id', convo.id)
+            .eq('conversation_id', latestConvo.id)
             .order('created_at', { ascending: true });
 
           if (msgsError) { console.error('Load msgs error:', msgsError); continue; }
 
           if (msgs && msgs.length > 0) {
-            loaded[convo.agent_id] = msgs.map(m => ({ role: m.role, content: m.content }));
+            loaded[agentId] = msgs.map(m => ({ role: m.role, content: m.content }));
           }
         }
+        setActiveConvoId(prev => ({ ...prev, ...activeIds }));
         if (Object.keys(loaded).length > 0) {
           setConversations(prev => {
             const merged = { ...prev, ...loaded };
@@ -273,6 +289,47 @@ export default function Home() {
         }
       }
     } catch (e) { console.error('Load chats error:', e); }
+  };
+
+  // Load a specific conversation by ID
+  const loadConversation = async (agentId, convoId) => {
+    try {
+      const { data: msgs, error } = await supabase
+        .from('messages')
+        .select('role, content, created_at')
+        .eq('conversation_id', convoId)
+        .order('created_at', { ascending: true });
+
+      if (error) { console.error('Load convo error:', error); return; }
+
+      const messages = (msgs || []).map(m => ({ role: m.role, content: m.content }));
+      setConversations(prev => ({ ...prev, [agentId]: messages }));
+      setActiveConvoId(prev => ({ ...prev, [agentId]: convoId }));
+      saveToLocal({ ...conversations, [agentId]: messages });
+    } catch (e) { console.error('Load conversation error:', e); }
+  };
+
+  // Start a new chat for an agent
+  const startNewChat = (agentId) => {
+    setConversations(prev => ({ ...prev, [agentId]: [] }));
+    setActiveConvoId(prev => ({ ...prev, [agentId]: null }));
+  };
+
+  // Delete a conversation from history
+  const deleteConversation = async (agentId, convoId) => {
+    if (!confirm('Hapus percakapan ini?')) return;
+    try {
+      await supabase.from('messages').delete().eq('conversation_id', convoId);
+      await supabase.from('conversations').delete().eq('id', convoId);
+      setChatHistory(prev => ({
+        ...prev,
+        [agentId]: (prev[agentId] || []).filter(c => c.id !== convoId),
+      }));
+      // If we deleted the active conversation, start fresh
+      if (activeConvoId[agentId] === convoId) {
+        startNewChat(agentId);
+      }
+    } catch (e) { console.error('Delete convo error:', e); }
   };
 
   // Save conversation to database (background)
@@ -287,24 +344,16 @@ export default function Home() {
     });
 
     try {
-      // Check if conversation exists for this agent
-      const { data: existingList } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('agent_id', agentId)
-        .eq('is_archived', false)
-        .limit(1);
-
-      const existing = existingList?.[0];
-      let conversationId;
+      const currentConvoId = activeConvoId[agentId];
+      let conversationId = currentConvoId;
       const title = messages.find(m => m.role === 'user')?.content?.substring(0, 100) || 'Untitled';
 
-      if (existing) {
-        conversationId = existing.id;
+      if (conversationId) {
+        // Update existing conversation
         await supabase.from('conversations').update({ title, updated_at: new Date().toISOString() }).eq('id', conversationId);
         await supabase.from('messages').delete().eq('conversation_id', conversationId);
       } else {
+        // Create new conversation
         const { data: newConvo, error: convoError } = await supabase
           .from('conversations')
           .insert({ user_id: user.id, agent_id: agentId, title })
@@ -312,6 +361,12 @@ export default function Home() {
           .single();
         if (convoError) { console.error('Create conversation error:', convoError); return; }
         conversationId = newConvo?.id;
+        setActiveConvoId(prev => ({ ...prev, [agentId]: conversationId }));
+        // Add to chat history
+        setChatHistory(prev => ({
+          ...prev,
+          [agentId]: [{ id: conversationId, title, updated_at: new Date().toISOString() }, ...(prev[agentId] || [])],
+        }));
       }
 
       if (conversationId) {
@@ -322,6 +377,11 @@ export default function Home() {
         }));
         const { error: msgError } = await supabase.from('messages').insert(msgRows);
         if (msgError) console.error('Insert messages error:', msgError);
+        // Update title in history
+        setChatHistory(prev => ({
+          ...prev,
+          [agentId]: (prev[agentId] || []).map(c => c.id === conversationId ? { ...c, title, updated_at: new Date().toISOString() } : c),
+        }));
       }
     } catch (e) { console.error('Save to DB error:', e); }
   };
@@ -407,19 +467,22 @@ export default function Home() {
     const updated = { ...conversations, [agentId]: [] };
     setConversations(updated);
     saveToLocal(updated);
+    setActiveConvoId(prev => ({ ...prev, [agentId]: null }));
     if (user) {
       try {
-        const { data: convo } = await supabase
+        const { data: convos } = await supabase
           .from('conversations')
           .select('id')
           .eq('user_id', user.id)
           .eq('agent_id', agentId)
-          .eq('is_archived', false)
-          .maybeSingle();
-        if (convo) {
-          await supabase.from('messages').delete().eq('conversation_id', convo.id);
-          await supabase.from('conversations').delete().eq('id', convo.id);
+          .eq('is_archived', false);
+        if (convos) {
+          for (const c of convos) {
+            await supabase.from('messages').delete().eq('conversation_id', c.id);
+          }
+          await supabase.from('conversations').delete().eq('user_id', user.id).eq('agent_id', agentId).eq('is_archived', false);
         }
+        setChatHistory(prev => ({ ...prev, [agentId]: [] }));
       } catch (e) { console.error('Clear chat error:', e); }
     }
   };
@@ -1015,9 +1078,87 @@ export default function Home() {
                   boxShadow: `0 0 8px ${agent.color}80`,
                 }} />
               )}
+              {(chatHistory[agent.id] || []).length > 1 && (
+                <div style={{
+                  fontSize: 9, color: T.textMuted, background: T.bgCard,
+                  padding: '2px 6px', borderRadius: 8, flexShrink: 0,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>{(chatHistory[agent.id] || []).length}</div>
+              )}
             </button>
           ))}
         </div>
+
+        {/* Chat History */}
+        {mode === 'single' && (
+          <div style={{
+            borderTop: `1px solid ${T.border}`,
+            maxHeight: showHistory ? 200 : 0, overflow: 'hidden',
+            transition: 'max-height 0.3s ease',
+          }}>
+            <div style={{ padding: '8px 10px' }}>
+              <button onClick={() => startNewChat(activeAgent.id)} style={{
+                width: '100%', padding: '8px 12px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)',
+                color: '#00d4ff', fontSize: 11, fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif", marginBottom: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>＋ Chat Baru</button>
+              <div style={{ overflowY: 'auto', maxHeight: 140, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {(chatHistory[activeAgent.id] || []).map(convo => (
+                  <div key={convo.id} style={{
+                    padding: '7px 10px', borderRadius: 8, cursor: 'pointer',
+                    background: activeConvoId[activeAgent.id] === convo.id ? `${activeAgent.color}12` : T.bgGlass,
+                    border: `1px solid ${activeConvoId[activeAgent.id] === convo.id ? `${activeAgent.color}30` : 'transparent'}`,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    transition: 'all 0.2s ease',
+                  }}
+                    onClick={() => loadConversation(activeAgent.id, convo.id)}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 500, color: T.text,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{convo.title}</div>
+                      <div style={{
+                        fontSize: 9, color: T.textMuted,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}>{new Date(convo.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</div>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); deleteConversation(activeAgent.id, convo.id); }} style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: T.textMuted, fontSize: 12, padding: '2px 4px', borderRadius: 4,
+                      opacity: 0.5, transition: 'opacity 0.2s',
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                    >🗑</button>
+                  </div>
+                ))}
+                {(chatHistory[activeAgent.id] || []).length === 0 && (
+                  <div style={{ fontSize: 10, color: T.textMuted, textAlign: 'center', padding: '8px 0', fontStyle: 'italic' }}>
+                    Belum ada riwayat chat
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* History Toggle */}
+        {mode === 'single' && (
+          <button onClick={() => setShowHistory(!showHistory)} style={{
+            width: '100%', padding: '6px 16px', cursor: 'pointer',
+            background: 'transparent', border: 'none', borderTop: `1px solid ${T.border}`,
+            color: T.textMuted, fontSize: 10, fontWeight: 600,
+            fontFamily: "'JetBrains Mono', monospace",
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            letterSpacing: 1, textTransform: 'uppercase',
+          }}>
+            <span style={{ transform: showHistory ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s' }}>▾</span>
+            {showHistory ? 'Sembunyikan Riwayat' : `Riwayat Chat (${(chatHistory[activeAgent.id] || []).length})`}
+          </button>
+        )}
 
         <div style={{
           padding: '12px 16px', borderTop: `1px solid ${T.border}`,
