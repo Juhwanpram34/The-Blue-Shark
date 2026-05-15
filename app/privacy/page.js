@@ -16,15 +16,16 @@ export default function PrivacyPolicy() {
 
       {/* Header */}
       <div style={{
-        padding: '20px 40px',
+        padding: '16px 20px',
         background: 'rgba(6,13,26,0.85)', backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', gap: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <a href="/landing" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🦈</span>
           <span style={{ fontSize: 18, fontWeight: 800, color: '#00d4ff' }}>The Blue Shark</span>
         </a>
+        <a href="/landing" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>← Kembali</a>
       </div>
 
       {/* Content */}
@@ -166,7 +167,7 @@ export default function PrivacyPolicy() {
 
       {/* Footer */}
       <div style={{
-        padding: '24px 40px', textAlign: 'center',
+        padding: '24px 20px', textAlign: 'center',
         borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
         <p style={{
