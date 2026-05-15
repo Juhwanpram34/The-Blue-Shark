@@ -6,6 +6,57 @@ import { AGENTS } from '../lib/agents';
 import { PLANS, getPlan, canUseAgent, canUseCollaboration } from '../lib/pricing';
 import { exportToPDF, exportToCSV } from '../lib/export';
 
+const PROMPT_TEMPLATES = {
+  'market-research': [
+    { icon: '📈', title: 'Analisis Pasar', desc: 'Ukuran pasar, tren, dan peluang', prompt: 'Lakukan analisis pasar lengkap untuk industri [sebutkan industri] di Indonesia tahun 2026. Sertakan ukuran pasar (TAM/SAM/SOM), tren utama, dan peluang pertumbuhan.' },
+    { icon: '⚔️', title: 'Analisis Kompetitor', desc: 'SWOT dan positioning pesaing', prompt: 'Buat analisis kompetitor mendalam antara [Brand A] vs [Brand B]. Sertakan SWOT analysis, market share, pricing comparison, dan keunggulan kompetitif masing-masing.' },
+    { icon: '🎯', title: 'Segmentasi Pelanggan', desc: 'Persona dan perilaku konsumen', prompt: 'Identifikasi segmentasi pelanggan untuk produk [sebutkan produk/jasa]. Buat 3-4 customer persona lengkap dengan demografi, pain points, dan buying behavior.' },
+    { icon: '🌍', title: 'Market Entry', desc: 'Strategi masuk pasar baru', prompt: 'Buat strategi market entry untuk produk [sebutkan produk] ke pasar [sebutkan negara/kota]. Sertakan analisis PESTEL, barriers to entry, dan go-to-market plan.' },
+  ],
+  'content-creator': [
+    { icon: '📱', title: 'Konten Media Sosial', desc: '10 ide post + caption siap pakai', prompt: 'Buatkan 10 ide konten media sosial untuk brand [sebutkan brand/industri] selama 1 bulan. Sertakan hook, caption siap pakai, hashtag, dan format terbaik untuk setiap platform.' },
+    { icon: '✉️', title: 'Email Marketing', desc: 'Sequence email konversi tinggi', prompt: 'Buatkan email marketing sequence 5 email untuk [sebutkan produk/jasa]. Sertakan subject line, preview text, body email, dan CTA untuk setiap email.' },
+    { icon: '📝', title: 'Blog SEO', desc: 'Artikel teroptimasi mesin pencari', prompt: 'Tulis artikel blog SEO-friendly (1500+ kata) tentang [sebutkan topik]. Sertakan meta title, meta description, heading structure (H1-H3), internal linking suggestion, dan target keyword.' },
+    { icon: '🎬', title: 'Script Video', desc: 'Script konten video/reels', prompt: 'Buatkan script video TikTok/Reels 60 detik untuk mempromosikan [sebutkan produk]. Sertakan hook (3 detik pertama), body content, CTA, dan saran visual/B-roll.' },
+  ],
+  'sentiment-analysis': [
+    { icon: '⭐', title: 'Analisis Review', desc: 'Sentimen dari review produk', prompt: 'Analisis sentimen dari review produk [sebutkan produk] di marketplace Indonesia. Identifikasi 5 pain point utama, 5 hal yang paling disukai, dan overall sentiment score.' },
+    { icon: '📊', title: 'Brand Monitoring', desc: 'Reputasi brand di media sosial', prompt: 'Lakukan brand monitoring untuk [sebutkan brand]. Analisis sentimen di Twitter, Instagram, dan TikTok. Sertakan sentiment score, trending topics, dan competitor comparison.' },
+    { icon: '🔥', title: 'Crisis Detection', desc: 'Deteksi potensi krisis brand', prompt: 'Identifikasi potensi crisis atau sentimen negatif yang sedang trending terkait [sebutkan industri/brand]. Sertakan severity level, root cause, dan crisis response plan.' },
+    { icon: '📋', title: 'Feedback Analysis', desc: 'Analisis umpan balik pelanggan', prompt: 'Analisis feedback pelanggan untuk [sebutkan produk/layanan]. Kategorikan feedback menjadi feature requests, complaints, praise. Sertakan prioritas perbaikan.' },
+  ],
+  'marketing-optimizer': [
+    { icon: '💰', title: 'Strategi Iklan Digital', desc: 'Campaign plan + budget allocation', prompt: 'Buat strategi iklan digital lengkap untuk [sebutkan produk/bisnis] dengan budget [sebutkan budget]/bulan. Sertakan channel allocation, targeting, ad copy, dan projected ROAS.' },
+    { icon: '📈', title: 'Optimasi Konversi', desc: 'Tingkatkan conversion rate', prompt: 'Berikan 10 strategi untuk meningkatkan conversion rate landing page [sebutkan URL/jenis bisnis]. Sertakan A/B test ideas, CTA optimization, dan trust signals.' },
+    { icon: '🚀', title: 'Growth Hacking', desc: 'Strategi pertumbuhan cepat', prompt: 'Buat growth hacking playbook untuk startup [sebutkan jenis startup] dengan budget terbatas. Sertakan 5 viral loop ideas, referral program design, dan content-led growth strategy.' },
+    { icon: '🎯', title: 'Funnel Marketing', desc: 'Optimasi marketing funnel', prompt: 'Desain marketing funnel lengkap (TOFU → MOFU → BOFU) untuk [sebutkan bisnis]. Sertakan content strategy, nurturing sequence, dan conversion triggers di setiap tahap.' },
+  ],
+  'cybersecurity': [
+    { icon: '🔒', title: 'Security Audit', desc: 'Audit keamanan aplikasi web', prompt: 'Lakukan security audit untuk aplikasi web [sebutkan tipe: e-commerce/SaaS/dll]. Periksa OWASP Top 10, API security, authentication, dan data protection. Berikan severity level tiap temuan.' },
+    { icon: '📜', title: 'Compliance Check', desc: 'Cek kepatuhan regulasi', prompt: 'Buat compliance checklist untuk [sebutkan bisnis] terhadap UU PDP Indonesia dan ISO 27001. Identifikasi gap dan berikan remediation plan dengan timeline.' },
+    { icon: '🛡️', title: 'Incident Response', desc: 'Plan tanggap insiden keamanan', prompt: 'Buat incident response plan untuk [sebutkan jenis serangan: data breach/ransomware/DDoS]. Sertakan detection, containment, eradication, recovery steps, dan communication template.' },
+    { icon: '🔐', title: 'Security Architecture', desc: 'Desain arsitektur keamanan', prompt: 'Desain security architecture untuk aplikasi [sebutkan tipe aplikasi] yang akan di-deploy di cloud. Sertakan IAM, encryption, network security, dan monitoring stack.' },
+  ],
+  'workflow-automation': [
+    { icon: '⚡', title: 'Otomatisasi Proses', desc: 'Automasi workflow bisnis', prompt: 'Desain otomatisasi untuk proses [sebutkan proses: onboarding/invoice/approval]. Sertakan workflow diagram, tools yang digunakan (Zapier/Make/n8n), setup steps, dan ROI calculation.' },
+    { icon: '🔗', title: 'Integrasi Sistem', desc: 'Hubungkan tools & platform', prompt: 'Buat integration blueprint untuk menghubungkan [Tool A] dengan [Tool B]. Sertakan API endpoints, data mapping, trigger/action flow, dan error handling.' },
+    { icon: '📧', title: 'Email Automation', desc: 'Otomatisasi email & notifikasi', prompt: 'Desain email automation system untuk [sebutkan use case: welcome series/abandoned cart/renewal]. Sertakan trigger conditions, email sequence, delay timing, dan personalization rules.' },
+    { icon: '📊', title: 'Reporting Otomatis', desc: 'Laporan & dashboard otomatis', prompt: 'Buat automated reporting system yang mengumpulkan data dari [sebutkan sumber data] dan generate laporan mingguan/bulanan otomatis. Sertakan metrics, visualization, dan delivery method.' },
+  ],
+  'ml-performance': [
+    { icon: '🤖', title: 'Model Selection', desc: 'Pilih model ML yang tepat', prompt: 'Rekomendasikan model machine learning terbaik untuk [sebutkan use case: recommendation/classification/NLP]. Bandingkan 3-5 model dengan accuracy, latency, dan cost. Sertakan code snippet.' },
+    { icon: '⚙️', title: 'Fine-Tuning LLM', desc: 'Tuning model bahasa', prompt: 'Buat panduan fine-tuning LLM untuk [sebutkan use case: customer service/content generation]. Sertakan dataset preparation, training strategy, evaluation metrics, dan deployment plan.' },
+    { icon: '📊', title: 'Data Pipeline', desc: 'Desain pipeline data', prompt: 'Desain data pipeline end-to-end untuk [sebutkan use case]. Sertakan data ingestion, preprocessing, feature engineering, model training, dan serving architecture.' },
+    { icon: '🚀', title: 'Optimasi Model', desc: 'Tingkatkan performa model', prompt: 'Model [sebutkan model] saya mendapat accuracy [X]%. Bantu optimasi dengan hyperparameter tuning, feature engineering, dan architecture improvements. Target accuracy [Y]%.' },
+  ],
+  'customer-support': [
+    { icon: '🤖', title: 'Desain Chatbot', desc: 'Buat chatbot FAQ otomatis', prompt: 'Desain chatbot FAQ untuk [sebutkan bisnis]. Buat 20 pertanyaan umum dengan jawaban, conversation flow, escalation rules, dan fallback responses.' },
+    { icon: '📋', title: 'SOP Tim Support', desc: 'Template prosedur operasional', prompt: 'Buat SOP lengkap untuk tim customer support [sebutkan bisnis]. Sertakan ticket classification, response templates (20 template), SLA definitions, dan escalation matrix.' },
+    { icon: '📈', title: 'Kurangi Tiket 50%', desc: 'Strategi self-service', prompt: 'Buat strategi untuk mengurangi volume tiket support 50% untuk [sebutkan bisnis]. Sertakan knowledge base structure, self-service portal design, dan proactive support automation.' },
+    { icon: '⭐', title: 'Tingkatkan CSAT', desc: 'Strategi kepuasan pelanggan', prompt: 'Buat action plan untuk meningkatkan CSAT score dari [X] ke [Y] dalam 3 bulan. Sertakan quick wins, process improvements, training plan, dan measurement framework.' },
+  ],
+};
+
 function formatMessage(text, isDark = true) {
   if (!text) return '';
   const boldColor = isDark ? '#fff' : '#1a2332';
@@ -1480,7 +1531,7 @@ export default function Home() {
             <div style={{
               height: '100%', display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
-              animation: 'fadeInUp 0.6s ease-out',
+              animation: 'fadeInUp 0.6s ease-out', padding: isMobile ? '0 4px' : '0',
             }}>
               <div style={{
                 width: 72, height: 72, borderRadius: 22,
@@ -1494,8 +1545,42 @@ export default function Home() {
               </div>
               <div style={{
                 fontSize: 13, color: T.textMuted,
-                textAlign: 'center', maxWidth: 380, lineHeight: 1.6, marginBottom: 28,
+                textAlign: 'center', maxWidth: 380, lineHeight: 1.6, marginBottom: 20,
               }}>{activeAgent.description}</div>
+
+              {/* Prompt Templates */}
+              <div style={{
+                width: '100%', maxWidth: 600,
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: 10, marginBottom: 16,
+              }}>
+                {(PROMPT_TEMPLATES[activeAgent.id] || []).map((tmpl, i) => (
+                  <button key={i} onClick={() => { setInput(tmpl.prompt); inputRef.current?.focus(); }}
+                    style={{
+                      padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                      background: T.bgCard, border: `1px solid ${T.border}`,
+                      textAlign: 'left', transition: 'all 0.2s ease',
+                      fontFamily: "'Outfit', sans-serif",
+                      display: 'flex', flexDirection: 'column', gap: 4,
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = `${activeAgent.color}10`;
+                      e.currentTarget.style.borderColor = `${activeAgent.color}30`;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = T.bgCard;
+                      e.currentTarget.style.borderColor = T.border;
+                    }}
+                  >
+                    <div style={{ fontSize: 16 }}>{tmpl.icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{tmpl.title}</div>
+                    <div style={{ fontSize: 10, color: T.textMuted, lineHeight: 1.4 }}>{tmpl.desc}</div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Quick suggestions */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 460 }}>
                 {(activeAgent.suggestions || []).map((s, i) => (
                   <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
