@@ -113,6 +113,8 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState({}); // { agent_id: [{ id, title, updated_at }] }
   const [activeConvoId, setActiveConvoId] = useState({}); // { agent_id: convo_id }
   const [showHistory, setShowHistory] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -239,12 +241,21 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
-      if (session?.user) fetchUserPlan(session.user.id);
+      if (session?.user) {
+        fetchUserPlan(session.user.id);
+        // Check if first time user
+        const onboarded = localStorage.getItem('bs-onboarded');
+        if (!onboarded) setShowOnboarding(true);
+      }
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-      if (session?.user) fetchUserPlan(session.user.id);
+      if (session?.user) {
+        fetchUserPlan(session.user.id);
+        const onboarded = localStorage.getItem('bs-onboarded');
+        if (!onboarded) setShowOnboarding(true);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -2112,6 +2123,127 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Onboarding Modal */}
+      {showOnboarding && (() => {
+        const steps = [
+          {
+            icon: '🦈',
+            title: 'Selamat Datang di The Blue Shark!',
+            desc: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis siap membantu bisnis Anda.',
+            tip: 'Mari kita jelajahi fitur-fitur utama dalam 30 detik.',
+          },
+          {
+            icon: '🤖',
+            title: 'Pilih Agen AI',
+            desc: 'Di sidebar kiri, pilih agen sesuai kebutuhan Anda. Setiap agen punya keahlian berbeda — mulai dari riset pasar hingga keamanan siber.',
+            tip: '💡 Tip: Klik agen untuk langsung mulai chat!',
+          },
+          {
+            icon: '⚡',
+            title: 'Gunakan Template Prompt',
+            desc: 'Setiap agen punya template pertanyaan siap pakai. Klik template, edit sesuai kebutuhan, lalu kirim.',
+            tip: '💡 Tip: Template membantu Anda mendapat jawaban yang lebih detail dan terstruktur.',
+          },
+          {
+            icon: '🤝',
+            title: 'Multi-Agent Collaboration',
+            desc: 'Kirim satu pertanyaan ke beberapa agen sekaligus! Dapatkan analisis komprehensif dari berbagai sudut pandang.',
+            tip: '💡 Tip: Klik tombol "Collab" di sidebar untuk mengaktifkan mode ini.',
+          },
+          {
+            icon: '🚀',
+            title: 'Siap Mulai!',
+            desc: 'Anda sudah siap menggunakan The Blue Shark. Mulai dengan bertanya apa saja kepada agen AI pilihan Anda.',
+            tip: 'Selamat mengeksplorasi! 🦈',
+          },
+        ];
+        const step = steps[onboardingStep];
+        return (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20, animation: 'overlayIn 0.3s ease-out',
+          }}>
+            <div style={{
+              width: '100%', maxWidth: 440, background: T.bgSidebar,
+              borderRadius: 24, padding: isMobile ? '32px 24px' : '40px 36px',
+              border: `1px solid ${T.border}`, textAlign: 'center',
+              animation: 'fadeInUp 0.4s ease-out',
+            }}>
+              <div style={{
+                fontSize: 56, marginBottom: 20,
+                animation: 'float 3s ease-in-out infinite',
+              }}>{step.icon}</div>
+
+              {/* Progress dots */}
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
+                {steps.map((_, i) => (
+                  <div key={i} style={{
+                    width: i === onboardingStep ? 24 : 8, height: 8, borderRadius: 4,
+                    background: i === onboardingStep ? '#00d4ff' : i < onboardingStep ? 'rgba(0,212,255,0.4)' : T.border,
+                    transition: 'all 0.3s ease',
+                  }} />
+                ))}
+              </div>
+
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: T.text }}>{step.title}</h2>
+              <p style={{ fontSize: 14, color: T.textSecondary, lineHeight: 1.7, marginBottom: 16 }}>{step.desc}</p>
+              <p style={{
+                fontSize: 12, color: '#00d4ff', lineHeight: 1.6,
+                padding: '10px 16px', borderRadius: 12,
+                background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.15)',
+                marginBottom: 28,
+              }}>{step.tip}</p>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                {onboardingStep > 0 && (
+                  <button onClick={() => setOnboardingStep(onboardingStep - 1)} style={{
+                    padding: '10px 24px', borderRadius: 12, cursor: 'pointer',
+                    background: T.bgCard, border: `1px solid ${T.border}`,
+                    color: T.textMuted, fontSize: 13, fontWeight: 500,
+                    fontFamily: "'Outfit', sans-serif",
+                  }}>← Kembali</button>
+                )}
+                {onboardingStep < steps.length - 1 ? (
+                  <button onClick={() => setOnboardingStep(onboardingStep + 1)} style={{
+                    padding: '10px 32px', borderRadius: 12, cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+                    border: 'none', color: '#fff', fontSize: 13, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif",
+                    boxShadow: '0 4px 16px rgba(0,212,255,0.3)',
+                  }}>Lanjut →</button>
+                ) : (
+                  <button onClick={() => {
+                    setShowOnboarding(false);
+                    setOnboardingStep(0);
+                    localStorage.setItem('bs-onboarded', 'true');
+                  }} style={{
+                    padding: '10px 32px', borderRadius: 12, cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)',
+                    border: 'none', color: '#fff', fontSize: 13, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif",
+                    boxShadow: '0 4px 16px rgba(0,212,255,0.3)',
+                  }}>Mulai Sekarang! 🦈</button>
+                )}
+              </div>
+
+              {onboardingStep < steps.length - 1 && (
+                <button onClick={() => {
+                  setShowOnboarding(false);
+                  setOnboardingStep(0);
+                  localStorage.setItem('bs-onboarded', 'true');
+                }} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: T.textMuted, fontSize: 11, marginTop: 16,
+                  fontFamily: "'Outfit', sans-serif",
+                }}>Lewati tutorial</button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

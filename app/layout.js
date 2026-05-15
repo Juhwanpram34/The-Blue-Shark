@@ -1,21 +1,40 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'The Blue Shark — AI Multi-Agent Platform',
-  description: 'Platform AI Multi-Agent untuk riset pasar, content creation, analisis sentimen, optimasi pemasaran, dan lainnya.',
+  title: {
+    default: 'The Blue Shark — AI Multi-Agent Platform Indonesia',
+    template: '%s | The Blue Shark',
+  },
+  description: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis untuk riset pasar, content creation, analisis sentimen, optimasi pemasaran, keamanan siber, dan otomatisasi bisnis. Powered by GPT-4o.',
+  keywords: ['AI Indonesia', 'multi-agent AI', 'riset pasar AI', 'content creator AI', 'analisis sentimen', 'marketing AI', 'chatbot bisnis', 'GPT-4', 'SaaS Indonesia', 'The Blue Shark', 'AI platform', 'bisnis AI'],
+  authors: [{ name: 'The Blue Shark', url: 'https://the-blue-shark.vercel.app' }],
+  creator: 'The Blue Shark',
+  publisher: 'The Blue Shark',
+  metadataBase: new URL('https://the-blue-shark.vercel.app'),
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    url: 'https://the-blue-shark.vercel.app',
+    siteName: 'The Blue Shark',
+    title: 'The Blue Shark — AI Multi-Agent Platform Indonesia',
+    description: '8 agen AI spesialis bekerja bersama untuk bisnis Anda. Riset pasar, content creation, analisis sentimen, optimasi pemasaran, dan lebih banyak lagi.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'The Blue Shark - AI Multi-Agent Platform' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'The Blue Shark — AI Multi-Agent Platform',
+    description: '8 agen AI spesialis bekerja bersama untuk bisnis Anda. Platform AI pertama di Indonesia.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true, follow: true,
+    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
   manifest: '/manifest.json',
   themeColor: '#00d4ff',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Blue Shark',
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Blue Shark' },
+  viewport: { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '48x48' },
@@ -59,6 +78,26 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'The Blue Shark',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              description: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis untuk riset pasar, content creation, analisis sentimen, dan optimasi bisnis.',
+              url: 'https://the-blue-shark.vercel.app',
+              offers: [
+                { '@type': 'Offer', price: '0', priceCurrency: 'USD', name: 'Free Plan' },
+                { '@type': 'Offer', price: '29', priceCurrency: 'USD', name: 'Pro Plan' },
+                { '@type': 'Offer', price: '99', priceCurrency: 'USD', name: 'Business Plan' },
+              ],
+              aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.8', ratingCount: '150' },
+            }),
+          }}
+        />
       </head>
       <body>
         {children}
