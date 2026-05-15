@@ -715,6 +715,14 @@ export default function Home() {
               fontFamily: "'JetBrains Mono', monospace",
               textTransform: 'uppercase', letterSpacing: 2.5,
             }}>AI Multi-Agent Platform</p>
+            <a href="/landing" style={{
+              display: 'inline-block', marginTop: 12,
+              fontSize: 12, color: '#00d4ff', textDecoration: 'none',
+              opacity: 0.7, transition: 'opacity 0.2s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
+            >← Kembali ke halaman utama</a>
           </div>
 
           <form onSubmit={handleAuth} style={{
@@ -1078,11 +1086,11 @@ export default function Home() {
                 fontSize: 16, boxShadow: '0 4px 16px rgba(0,212,255,0.3)',
               }}>🦈</div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>Multi-Agent Collaboration</div>
-                <div style={{
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600 }}>Multi-Agent Collaboration</div>
+                {!isMobile && <div style={{
                   fontSize: 10, color: '#00d4ff',
                   fontFamily: "'JetBrains Mono', monospace",
-                }}>● {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agen dipilih` : 'Mode otomatis'}</div>
+                }}>● {selectedCollabAgents.length > 0 ? `${selectedCollabAgents.length} agen dipilih` : 'Mode otomatis'}</div>}
               </div>
             </>
           ) : (
@@ -1094,11 +1102,11 @@ export default function Home() {
                 fontSize: 16, boxShadow: `0 4px 16px ${activeAgent.color}30`,
               }}>{activeAgent.icon}</div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{activeAgent.name}</div>
-                <div style={{
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600 }}>{activeAgent.name}</div>
+                {!isMobile && <div style={{
                   fontSize: 10, color: activeAgent.color,
                   fontFamily: "'JetBrains Mono', monospace",
-                }}>● Online — Siap menganalisis</div>
+                }}>● Online — Siap menganalisis</div>}
               </div>
             </>
           )}
@@ -1110,14 +1118,14 @@ export default function Home() {
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 16, transition: 'all 0.3s ease',
           }}>{theme === 'dark' ? '☀️' : '🌙'}</button>
-          <div style={{
+          {!isMobile && <div style={{
             padding: '5px 12px', borderRadius: 20,
             background: `${activeAgent.color}12`, border: `1px solid ${activeAgent.color}25`,
             fontSize: 10, color: activeAgent.color,
             fontFamily: "'JetBrains Mono', monospace",
-          }}>{currentMessages.filter(m => m.role === 'user').length} pertanyaan</div>
+          }}>{currentMessages.filter(m => m.role === 'user').length} pertanyaan</div>}
           {/* Export Buttons */}
-          {((mode === 'single' && currentMessages.length > 0) || (mode === 'collab' && collabResults && !collabResults.error)) && (
+          {!isMobile && ((mode === 'single' && currentMessages.length > 0) || (mode === 'collab' && collabResults && !collabResults.error)) && (
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => {
                 if (mode === 'collab' && collabResults) {
