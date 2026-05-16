@@ -156,7 +156,7 @@ export default function LandingPage() {
           fontSize: isMobile ? 28 : 52, fontWeight: 800, lineHeight: 1.15, marginBottom: 20, letterSpacing: -1,
           background: 'linear-gradient(135deg, #fff 0%, #00d4ff 50%, #aa00ff 100%)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>8 Agen AI Bekerja Bersama Untuk Bisnis Anda</h1>
+        }}>Multi-Agent AI Untuk Dominasi Pasar</h1>
         <p style={{ fontSize: isMobile ? 15 : 18, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 600, margin: '0 auto 40px' }}>
           Platform AI Multi-Agent pertama di Indonesia yang menggabungkan riset pasar, pembuatan konten, analisis sentimen, dan optimasi pemasaran dalam satu platform.
         </p>

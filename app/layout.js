@@ -18,13 +18,13 @@ export const metadata = {
     url: 'https://the-blue-shark-ars8.vercel.app',
     siteName: 'The Blue Shark',
     title: 'The Blue Shark — AI Multi-Agent Platform Indonesia',
-    description: '8 agen AI spesialis bekerja bersama untuk bisnis Anda. Riset pasar, content creation, analisis sentimen, optimasi pemasaran, dan lebih banyak lagi.',
+    description: 'Multi-Agent AI untuk dominasi pasar. Riset pasar, content creation, analisis sentimen, optimasi pemasaran, dan lebih banyak lagi.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'The Blue Shark - AI Multi-Agent Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'The Blue Shark — AI Multi-Agent Platform',
-    description: '8 agen AI spesialis bekerja bersama untuk bisnis Anda. Platform AI pertama di Indonesia.',
+    description: 'Multi-Agent AI untuk dominasi pasar. Platform AI pertama di Indonesia.',
     images: ['/og-image.png'],
   },
   robots: {
