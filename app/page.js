@@ -65,7 +65,7 @@ function formatMessage(text, isDark = true) {
   return lines.map((line, i) => {
     // Image markdown: ![alt](url)
     let processed = line.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
-      `<img src="${url}" alt="${alt}" style="max-width:100%;border-radius:12px;margin:8px 0;" />`
+      `<img src="${url}" alt="${alt}" style="max-width:min(100%,360px);border-radius:12px;margin:8px 0;cursor:pointer;" onclick="window.open('${url}','_blank')" title="Klik untuk lihat ukuran penuh" />`
     );
     processed = processed.replace(/\*\*(.+?)\*\*/g, (_, m) =>
       `<strong style="color:${boldColor};font-weight:600">${m}</strong>`
@@ -701,15 +701,50 @@ export default function Home() {
     try {
       if (isImageRequest) {
         const imagePrompt = userInput.replace(/^(\/gambar|\/image|gambar|buat gambar|buatkan gambar|bikin gambar|generate image|generate foto|tolong buatkan gambar)\s*/i, '');
+
+        // Parse inline options from prompt: --size 1024x1024 --quality hd --variations 3
+        let parsedPrompt = imagePrompt || userInput;
+        let reqSize = undefined;
+        let reqQuality = undefined;
+        let reqVariations = undefined;
+
+        const sizeMatch = parsedPrompt.match(/--size\s+([\w]+x[\w]+)/i);
+        if (sizeMatch) { reqSize = sizeMatch[1]; parsedPrompt = parsedPrompt.replace(sizeMatch[0], '').trim(); }
+
+        const qualityMatch = parsedPrompt.match(/--quality\s+(standard|hd)/i);
+        if (qualityMatch) { reqQuality = qualityMatch[1].toLowerCase(); parsedPrompt = parsedPrompt.replace(qualityMatch[0], '').trim(); }
+
+        const varMatch = parsedPrompt.match(/--variations?\s+(\d+)/i);
+        if (varMatch) { reqVariations = parseInt(varMatch[1]); parsedPrompt = parsedPrompt.replace(varMatch[0], '').trim(); }
+
         const res = await fetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: imagePrompt || userInput }),
+          body: JSON.stringify({
+            prompt: parsedPrompt,
+            size: reqSize,
+            quality: reqQuality,
+            variations: reqVariations || 1,
+            plan: userPlan || 'free',
+          }),
         });
         const data = await res.json();
         let content;
-        if (data.success && data.url) {
-          content = `🎨 **Gambar berhasil dibuat!**\n\n![Generated Image](${data.url})\n\n**Prompt:** ${data.revisedPrompt || imagePrompt}\n**Model:** ${data.model}`;
+        if (data.success && data.images?.length > 0) {
+          const imgCount = data.images.length;
+          content = `🎨 **${imgCount > 1 ? imgCount + ' gambar' : 'Gambar'} berhasil dibuat!**\n`;
+          content += `📐 **Size:** ${data.size || '—'} | 🎯 **Quality:** ${data.quality || 'standard'} | 🤖 **Model:** ${data.model}\n`;
+          data.images.forEach((img, idx) => {
+            if (imgCount > 1) content += `\n**Variasi ${idx + 1}:**\n`;
+            content += `![Generated Image ${idx + 1}](${img.url})\n`;
+          });
+          if (data.images[0].revisedPrompt && data.images[0].revisedPrompt !== parsedPrompt) {
+            content += `\n**Revised Prompt:** ${data.images[0].revisedPrompt}`;
+          }
+          // Show tips for free users
+          if (userPlan === 'free') {
+            content += `\n\n💡 *Upgrade ke Pro untuk generate hingga 3 variasi, ukuran custom, dan kualitas HD!*`;
+          }
         } else {
           content = `⚠️ Gagal membuat gambar: ${data.error || 'Unknown error'}`;
         }
