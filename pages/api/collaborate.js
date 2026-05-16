@@ -1,4 +1,5 @@
 import { AGENTS } from '../../lib/agents';
+import { applyRateLimit } from '../../lib/rateLimit';
 
 const SERP_API_KEY = process.env.SERP_API_KEY;
 
@@ -144,6 +145,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Rate limiting
+  if (!applyRateLimit(req, res, 'collaborate')) return;
 
   const { query, agents: requestedAgents } = req.body;
 

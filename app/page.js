@@ -717,7 +717,17 @@ export default function Home() {
         const finalMessages = [...updatedMessages, { role: 'assistant', content }];
         setConversations(prev => ({ ...prev, [activeAgent.id]: finalMessages }));
         setTotalQueries(prev => prev + 1);
-        setQueriesUsed(prev => prev + 1);
+        setQueriesUsed(prev => {
+          const newCount = prev + 1;
+          const qPlan = getPlan(userPlan);
+          const qLimit = qPlan.limits.queriesPerDay;
+          if (qLimit > 0 && newCount === Math.floor(qLimit * 0.8) && user?.email) {
+            fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'query-limit', to: user.email, name: user.user_metadata?.full_name || 'User', data: { used: newCount, limit: qLimit } }),
+            }).catch(() => {});
+          }
+          return newCount;
+        });
         saveToDatabase(activeAgent.id, finalMessages);
       } else {
         const res = await fetch('/api/chat', {
@@ -729,6 +739,18 @@ export default function Home() {
           }),
         });
         const data = await res.json();
+
+        // Handle rate limiting
+        if (res.status === 429) {
+          const retryMsg = `⚠️ ${data.message || 'Terlalu banyak request.'} Coba lagi dalam ${data.retryAfter || 60} detik.`;
+          setConversations(prev => ({
+            ...prev,
+            [activeAgent.id]: [...updatedMessages, { role: 'assistant', content: retryMsg }],
+          }));
+          setIsLoading(false);
+          return;
+        }
+
         const content = data.content || data.error || 'Maaf, terjadi kesalahan.';
         
         // Simulate streaming effect - reveal text progressively
@@ -754,16 +776,31 @@ export default function Home() {
           [activeAgent.id]: finalMessages,
         }));
         setTotalQueries(prev => prev + 1);
-        setQueriesUsed(prev => prev + 1);
+        setQueriesUsed(prev => {
+          const newCount = prev + 1;
+          const qPlan = getPlan(userPlan);
+          const qLimit = qPlan.limits.queriesPerDay;
+          if (qLimit > 0 && newCount === Math.floor(qLimit * 0.8) && user?.email) {
+            fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'query-limit', to: user.email, name: user.user_metadata?.full_name || 'User', data: { used: newCount, limit: qLimit } }),
+            }).catch(() => {});
+          }
+          return newCount;
+        });
         saveToDatabase(activeAgent.id, finalMessages);
       }
     } catch (error) {
+      let errorMsg = '⚠️ Terjadi kesalahan koneksi. Coba lagi.';
+      if (error.message?.includes('429') || error.message?.includes('rate')) {
+        errorMsg = '⚠️ Terlalu banyak request. Tunggu sebentar lalu coba lagi.';
+      } else if (error.message?.includes('500')) {
+        errorMsg = '⚠️ Server sedang bermasalah. Coba lagi dalam beberapa saat.';
+      } else if (error.message?.includes('timeout') || error.message?.includes('network')) {
+        errorMsg = '⚠️ Koneksi terputus. Periksa internet Anda dan coba lagi.';
+      }
       setConversations(prev => ({
         ...prev,
-        [activeAgent.id]: [...updatedMessages, {
-          role: 'assistant',
-          content: '⚠️ Terjadi kesalahan koneksi. Coba lagi.',
-        }],
+        [activeAgent.id]: [...updatedMessages, { role: 'assistant', content: errorMsg }],
       }));
     } finally { setIsLoading(false); }
   };

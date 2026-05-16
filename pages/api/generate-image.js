@@ -1,9 +1,14 @@
+import { applyRateLimit } from '../../lib/rateLimit';
+
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Rate limiting
+  if (!applyRateLimit(req, res, 'generateImage')) return;
 
   if (!OPENAI_API_KEY) {
     return res.status(500).json({ error: 'OpenAI API key not configured' });

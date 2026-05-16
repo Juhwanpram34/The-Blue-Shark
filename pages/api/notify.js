@@ -125,6 +125,72 @@ function weeklySummaryEmail(name, stats) {
   };
 }
 
+function paymentConfirmEmail(name, planName, price, transactionId) {
+  return {
+    subject: `✅ Pembayaran Berhasil — Paket ${planName} Aktif!`,
+    html: `
+      <div style="max-width:600px;margin:0 auto;background:#0a1628;color:#e0e8f0;font-family:Arial,sans-serif;border-radius:16px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#00e676,#00bfa5);padding:30px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:8px;">✅</div>
+          <h1 style="color:#fff;font-size:22px;margin:0;">Pembayaran Berhasil!</h1>
+          <p style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:6px;">Paket ${planName} Anda sekarang aktif</p>
+        </div>
+        <div style="padding:30px;">
+          <p style="color:#d0d8e4;font-size:14px;line-height:1.7;margin-bottom:20px;">Halo ${name},</p>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.7;margin-bottom:20px;">Terima kasih atas pembayaran Anda. Berikut detail transaksi:</p>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;margin-bottom:20px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;">Paket</td><td style="padding:8px 0;color:#00d4ff;font-size:13px;font-weight:600;text-align:right;">${planName}</td></tr>
+              <tr><td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;">Harga</td><td style="padding:8px 0;color:#e0e8f0;font-size:13px;text-align:right;">$${price}/bulan</td></tr>
+              <tr><td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;">ID Transaksi</td><td style="padding:8px 0;color:rgba(255,255,255,0.5);font-size:11px;text-align:right;font-family:monospace;">${transactionId}</td></tr>
+              <tr><td style="padding:8px 0;color:rgba(255,255,255,0.4);font-size:12px;">Tanggal</td><td style="padding:8px 0;color:rgba(255,255,255,0.5);font-size:12px;text-align:right;">${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+            </table>
+          </div>
+          <div style="text-align:center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://the-blue-shark-ars8.vercel.app'}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#00d4ff,#0057ff);color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-size:14px;">Buka Dashboard</a>
+          </div>
+          <p style="color:rgba(255,255,255,0.3);font-size:11px;text-align:center;margin-top:20px;">Simpan email ini sebagai bukti pembayaran.</p>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);padding:16px 30px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.3);font-size:11px;margin:0;">© 2026 The Blue Shark — AI Multi-Agent Platform</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+function upgradeEmail(name, planName) {
+  return {
+    subject: `🚀 Upgrade Berhasil — Selamat Datang di ${planName}!`,
+    html: `
+      <div style="max-width:600px;margin:0 auto;background:#0a1628;color:#e0e8f0;font-family:Arial,sans-serif;border-radius:16px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#00d4ff,#aa00ff);padding:30px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:8px;">🚀</div>
+          <h1 style="color:#fff;font-size:22px;margin:0;">Upgrade Berhasil!</h1>
+          <p style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:6px;">Anda sekarang pengguna ${planName}</p>
+        </div>
+        <div style="padding:30px;">
+          <p style="color:#d0d8e4;font-size:14px;line-height:1.7;margin-bottom:20px;">Halo ${name},</p>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.7;margin-bottom:20px;">Selamat! Anda sekarang memiliki akses ke fitur premium:</p>
+          <div style="margin-bottom:20px;">
+            <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:2;">✅ Akses semua 8 Agen AI</p>
+            <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:2;">✅ Multi-Agent Collaboration</p>
+            <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:2;">✅ ${planName === 'Business' ? 'Unlimited' : '100'} queries per hari</p>
+            <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:2;">✅ Export hasil (PDF/CSV)</p>
+            <p style="color:rgba(255,255,255,0.6);font-size:13px;line-height:2;">✅ Live data integrations</p>
+          </div>
+          <div style="text-align:center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://the-blue-shark-ars8.vercel.app'}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#00d4ff,#0057ff);color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-size:14px;">Mulai Gunakan Fitur Premium</a>
+          </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);padding:16px 30px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.3);font-size:11px;margin:0;">© 2026 The Blue Shark — AI Multi-Agent Platform</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -155,6 +221,12 @@ export default async function handler(req, res) {
           totalQueries: 0, agentsUsed: 0, collabSessions: 0,
           topAgent: '-', weekRange: '-', topQueries: [],
         });
+        break;
+      case 'payment-confirm':
+        emailContent = paymentConfirmEmail(name || 'User', data?.planName || 'Pro', data?.price || 29, data?.transactionId || '-');
+        break;
+      case 'upgrade':
+        emailContent = upgradeEmail(name || 'User', data?.planName || 'Pro');
         break;
       default:
         return res.status(400).json({ error: 'Invalid email type' });
