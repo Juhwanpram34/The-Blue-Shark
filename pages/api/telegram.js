@@ -239,7 +239,7 @@ export default async function handler(req, res) {
     if (text === '/help' || text === 'ℹ️ Bantuan') {
       await sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `🦈 *Panduan The Blue Shark Bot*\n\n*Perintah:*\n/start — Mulai ulang\n/agents — Pilih agen AI\n/collab — Mode multi-agen\n/status — Lihat agen aktif\n\n*Cara Pakai:*\n1️⃣ Pilih agen dengan tombol "🤖 Pilih Agen"\n2️⃣ Ketik pertanyaan Anda\n3️⃣ Tunggu analisis dari AI\n\n*8 Agen Tersedia:*\n${AGENTS.map(a => `${a.icon} *${a.name}* — ${a.description}`).join('\n')}\n\n🌐 Platform web: the-blue-shark.vercel.app`,
+        text: `🦈 *Panduan The Blue Shark Bot*\n\n*Perintah:*\n/start — Mulai ulang\n/agents — Pilih agen AI\n/collab — Mode multi-agen\n/status — Lihat agen aktif\n\n*Cara Pakai:*\n1️⃣ Pilih agen dengan tombol "🤖 Pilih Agen"\n2️⃣ Ketik pertanyaan Anda\n3️⃣ Tunggu analisis dari AI\n\n*8 Agen Tersedia:*\n${AGENTS.map(a => `${a.icon} *${a.name}* — ${a.description}`).join('\n')}\n\n🌐 Platform web: the-blue-shark-ars8.vercel.app`,
         parse_mode: 'Markdown',
         reply_markup: getMainMenuKeyboard(),
       });
@@ -318,8 +318,8 @@ export default async function handler(req, res) {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '🦈 Buka Platform', url: 'https://the-blue-shark.vercel.app' }],
-            [{ text: '📖 Landing Page', url: 'https://the-blue-shark.vercel.app/landing' }],
+            [{ text: '🦈 Buka Platform', url: 'https://the-blue-shark-ars8.vercel.app' }],
+            [{ text: '📖 Landing Page', url: 'https://the-blue-shark-ars8.vercel.app/landing' }],
           ],
         },
       });
@@ -350,7 +350,7 @@ export default async function handler(req, res) {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '🌐 Lihat Hasil Lengkap', url: 'https://the-blue-shark.vercel.app' }],
+            [{ text: '🌐 Lihat Hasil Lengkap', url: 'https://the-blue-shark-ars8.vercel.app' }],
           ],
         },
       });
@@ -366,7 +366,7 @@ export default async function handler(req, res) {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '🌐 Buka di Platform', url: 'https://the-blue-shark.vercel.app' }],
+            [{ text: '🌐 Buka di Platform', url: 'https://the-blue-shark-ars8.vercel.app' }],
           ],
         },
       });

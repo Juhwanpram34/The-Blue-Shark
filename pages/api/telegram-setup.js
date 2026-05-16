@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   }
 
   const action = req.query.action || 'set';
-  const webhookUrl = `https://the-blue-shark.vercel.app/api/telegram`;
+  const webhookUrl = `https://the-blue-shark-ars8.vercel.app/api/telegram`;
 
   if (action === 'set') {
     const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
