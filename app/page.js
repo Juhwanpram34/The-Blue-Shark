@@ -711,7 +711,7 @@ export default function Home() {
         const sizeMatch = parsedPrompt.match(/--size\s+([\w]+x[\w]+)/i);
         if (sizeMatch) { reqSize = sizeMatch[1]; parsedPrompt = parsedPrompt.replace(sizeMatch[0], '').trim(); }
 
-        const qualityMatch = parsedPrompt.match(/--quality\s+(standard|hd)/i);
+        const qualityMatch = parsedPrompt.match(/--quality\s+(low|medium|high)/i);
         if (qualityMatch) { reqQuality = qualityMatch[1].toLowerCase(); parsedPrompt = parsedPrompt.replace(qualityMatch[0], '').trim(); }
 
         const varMatch = parsedPrompt.match(/--variations?\s+(\d+)/i);

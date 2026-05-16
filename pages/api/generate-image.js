@@ -3,27 +3,28 @@ import { applyRateLimit } from '../../lib/rateLimit';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // Image generation limits per plan
+// gpt-image-1 sizes: 1024x1024, 1024x1536, 1536x1024, auto
 const IMAGE_LIMITS = {
   free: {
     maxVariations: 1,
     allowedSizes: ['1024x1024'],
-    allowedQualities: ['standard'],
+    allowedQualities: ['low'],
     defaultSize: '1024x1024',
-    defaultQuality: 'standard',
+    defaultQuality: 'low',
   },
   pro: {
     maxVariations: 3,
-    allowedSizes: ['1024x1024', '1024x1792', '1792x1024'],
-    allowedQualities: ['standard', 'hd'],
+    allowedSizes: ['1024x1024', '1024x1536', '1536x1024'],
+    allowedQualities: ['low', 'medium', 'high'],
     defaultSize: '1024x1024',
-    defaultQuality: 'standard',
+    defaultQuality: 'medium',
   },
   business: {
     maxVariations: 4,
-    allowedSizes: ['1024x1024', '1024x1792', '1792x1024'],
-    allowedQualities: ['standard', 'hd'],
+    allowedSizes: ['1024x1024', '1024x1536', '1536x1024', 'auto'],
+    allowedQualities: ['low', 'medium', 'high'],
     defaultSize: '1024x1024',
-    defaultQuality: 'hd',
+    defaultQuality: 'high',
   },
 };
 
@@ -97,8 +98,8 @@ export default async function handler(req, res) {
   const finalVariations = Math.min(Math.max(1, variations), planLimits.maxVariations);
 
   try {
-    // Tier 1: dall-e-3 & dall-e-2 available. gpt-image-1 needs Tier 3+.
-    const models = ['dall-e-3', 'dall-e-2'];
+    // dall-e-2 and dall-e-3 are deprecated. gpt-image-1 is the current model.
+    const models = ['gpt-image-1'];
     const modelErrors = [];
 
     for (const model of models) {
@@ -180,8 +181,8 @@ async function generateImages(model, prompt, size, quality, n) {
     size,
   };
 
-  // Only dall-e-3 supports quality parameter
-  if (model === 'dall-e-3') {
+  // gpt-image-1 supports quality parameter
+  if (model === 'gpt-image-1' || model === 'dall-e-3') {
     body.quality = quality;
   }
 
