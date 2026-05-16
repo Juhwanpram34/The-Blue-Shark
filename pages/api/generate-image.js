@@ -180,14 +180,9 @@ async function generateImages(model, prompt, size, quality, n) {
     size,
   };
 
-  // Only dall-e-3 and gpt-image-1 support quality
-  if (model === 'dall-e-3' || model === 'gpt-image-1') {
+  // Only dall-e-3 supports quality parameter
+  if (model === 'dall-e-3') {
     body.quality = quality;
-  }
-
-  // gpt-image-1 returns b64_json by default
-  if (model !== 'gpt-image-1') {
-    body.response_format = 'url';
   }
 
   const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
