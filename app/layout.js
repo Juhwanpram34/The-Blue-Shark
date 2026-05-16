@@ -5,7 +5,7 @@ export const metadata = {
     default: 'The Blue Shark — AI Multi-Agent Platform Indonesia',
     template: '%s | The Blue Shark',
   },
-  description: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis untuk riset pasar, content creation, analisis sentimen, optimasi pemasaran, keamanan siber, dan otomatisasi bisnis. Powered by GPT-4o.',
+  description: 'Platform AI Multi-Agent pertama di Indonesia. Berbagai agen AI spesialis untuk riset pasar, content creation, analisis sentimen, optimasi pemasaran, keamanan siber, dan otomatisasi bisnis. Powered by GPT-4o.',
   keywords: ['AI Indonesia', 'multi-agent AI', 'riset pasar AI', 'content creator AI', 'analisis sentimen', 'marketing AI', 'chatbot bisnis', 'GPT-4', 'SaaS Indonesia', 'The Blue Shark', 'AI platform', 'bisnis AI'],
   authors: [{ name: 'The Blue Shark', url: 'https://the-blue-shark-ars8.vercel.app' }],
   creator: 'The Blue Shark',
@@ -87,7 +87,7 @@ export default function RootLayout({ children }) {
               name: 'The Blue Shark',
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',
-              description: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis untuk riset pasar, content creation, analisis sentimen, dan optimasi bisnis.',
+              description: 'Platform AI Multi-Agent pertama di Indonesia. Berbagai agen AI spesialis untuk riset pasar, content creation, analisis sentimen, dan optimasi bisnis.',
               url: 'https://the-blue-shark-ars8.vercel.app',
               offers: [
                 { '@type': 'Offer', price: '0', priceCurrency: 'USD', name: 'Free Plan' },

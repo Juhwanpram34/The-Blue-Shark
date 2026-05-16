@@ -23,7 +23,7 @@ export default function LandingPage() {
   }, []);
 
   const faqs = [
-    { q: 'Apa itu The Blue Shark?', a: 'The Blue Shark adalah platform AI Multi-Agent yang menggabungkan 8 agen AI spesialis untuk membantu bisnis Anda dalam riset pasar, pembuatan konten, analisis sentimen, optimasi pemasaran, keamanan siber, otomatisasi, machine learning, dan dukungan pelanggan.' },
+    { q: 'Apa itu The Blue Shark?', a: 'The Blue Shark adalah platform AI Multi-Agent yang menggabungkan berbagai agen AI spesialis untuk membantu bisnis Anda dalam riset pasar, pembuatan konten, analisis sentimen, optimasi pemasaran, keamanan siber, otomatisasi, machine learning, dan dukungan pelanggan.' },
     { q: 'Apakah data saya aman?', a: 'Ya, kami menggunakan Supabase dengan Row Level Security (RLS) untuk melindungi data Anda. Setiap pengguna hanya bisa mengakses data milik mereka sendiri. Semua komunikasi dienkripsi menggunakan SSL/TLS.' },
     { q: 'Apa bedanya Single Agent dan Multi-Agent?', a: 'Single Agent memungkinkan Anda berkomunikasi dengan satu agen AI secara langsung. Multi-Agent Collaboration menggabungkan beberapa agen sekaligus untuk memberikan analisis komprehensif dari berbagai sudut pandang dalam satu respons.' },
     { q: 'Bagaimana cara upgrade paket?', a: 'Anda bisa upgrade paket langsung dari dashboard setelah login. Klik tombol "Upgrade Plan" di sidebar, pilih paket yang diinginkan, dan ikuti instruksi pembayaran.' },
@@ -177,7 +177,7 @@ export default function LandingPage() {
           display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
           gap: isMobile ? 20 : 40, marginTop: isMobile ? 40 : 60,
         }}>
-          {[{ val: '8', label: 'Agen AI Spesialis' }, { val: '24/7', label: 'Selalu Online' }, { val: 'Real-time', label: 'Data Terkini' }, { val: '∞', label: 'Potensi Bisnis' }].map(s => (
+          {[{ val: 'Multi', label: 'Agen AI Spesialis' }, { val: '24/7', label: 'Selalu Online' }, { val: 'Real-time', label: 'Data Terkini' }, { val: '∞', label: 'Potensi Bisnis' }].map(s => (
             <div key={s.label} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: isMobile ? 24 : 32, fontWeight: 800, color: '#00d4ff' }}>{s.val}</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{s.label}</div>
@@ -215,7 +215,7 @@ export default function LandingPage() {
       <section id="agen" style={{ position: 'relative', zIndex: 1, padding: `80px ${pad}`, maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
           <div style={{ fontSize: 10, color: '#00d4ff', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>AGEN AI</div>
-          <h2 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, marginBottom: 12 }}>8 Agen AI Spesialis</h2>
+          <h2 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, marginBottom: 12 }}>Agen AI Spesialis Kami</h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 500, margin: '0 auto' }}>Setiap agen memiliki keahlian khusus untuk membantu aspek berbeda dari bisnis Anda</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
@@ -324,7 +324,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 600, margin: '0 auto', padding: isMobile ? '40px 24px' : '60px 40px', background: 'linear-gradient(135deg, rgba(0,212,255,0.1) 0%, rgba(170,0,255,0.08) 100%)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: 28 }}>
           <div style={{ fontSize: isMobile ? 36 : 48, marginBottom: 16 }}>🦈</div>
           <h2 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, marginBottom: 12 }}>Siap Menjadi Predator Pasar?</h2>
-          <p style={{ fontSize: isMobile ? 13 : 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 400, margin: '0 auto 28px' }}>Mulai gunakan The Blue Shark sekarang dan rasakan kekuatan 8 agen AI yang bekerja untuk bisnis Anda.</p>
+          <p style={{ fontSize: isMobile ? 13 : 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 400, margin: '0 auto 28px' }}>Mulai gunakan The Blue Shark sekarang dan rasakan kekuatan Multi-Agent AI yang bekerja untuk bisnis Anda.</p>
           <a href="/" style={{ display: 'inline-block', padding: isMobile ? '14px 32px' : '16px 40px', borderRadius: 14, background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)', color: '#fff', textDecoration: 'none', fontSize: 16, fontWeight: 600, boxShadow: '0 8px 32px rgba(0,212,255,0.3)' }}>Mulai Gratis Sekarang</a>
         </div>
       </section>

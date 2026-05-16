@@ -2216,7 +2216,7 @@ export default function Home() {
           {
             icon: '🦈',
             title: 'Selamat Datang di The Blue Shark!',
-            desc: 'Platform AI Multi-Agent pertama di Indonesia. 8 agen AI spesialis siap membantu bisnis Anda.',
+            desc: 'Platform AI Multi-Agent pertama di Indonesia. Berbagai agen AI spesialis siap membantu bisnis Anda.',
             tip: 'Mari kita jelajahi fitur-fitur utama dalam 30 detik.',
           },
           {

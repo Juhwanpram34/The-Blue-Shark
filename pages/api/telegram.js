@@ -228,7 +228,7 @@ export default async function handler(req, res) {
       chatState[chatId] = {};
       await sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `🦈 *Selamat Datang di The Blue Shark!*\n\nHai ${firstName}! Saya adalah AI Multi-Agent Platform dengan 8 agen AI spesialis.\n\n🤖 *Pilih Agen* — Chat dengan agen AI tertentu\n🤝 *Multi-Agent* — Beberapa agen analisis bersama\n🌐 *Buka Platform* — Akses fitur lengkap di web\n\nMulai dengan memilih agen atau langsung ketik pertanyaan! 👇`,
+        text: `🦈 *Selamat Datang di The Blue Shark!*\n\nHai ${firstName}! Saya adalah AI Multi-Agent Platform dengan berbagai agen AI spesialis.\n\n🤖 *Pilih Agen* — Chat dengan agen AI tertentu\n🤝 *Multi-Agent* — Beberapa agen analisis bersama\n🌐 *Buka Platform* — Akses fitur lengkap di web\n\nMulai dengan memilih agen atau langsung ketik pertanyaan! 👇`,
         parse_mode: 'Markdown',
         reply_markup: getMainMenuKeyboard(),
       });
@@ -239,7 +239,7 @@ export default async function handler(req, res) {
     if (text === '/help' || text === 'ℹ️ Bantuan') {
       await sendTelegram('sendMessage', {
         chat_id: chatId,
-        text: `🦈 *Panduan The Blue Shark Bot*\n\n*Perintah:*\n/start — Mulai ulang\n/agents — Pilih agen AI\n/collab — Mode multi-agen\n/status — Lihat agen aktif\n\n*Cara Pakai:*\n1️⃣ Pilih agen dengan tombol "🤖 Pilih Agen"\n2️⃣ Ketik pertanyaan Anda\n3️⃣ Tunggu analisis dari AI\n\n*8 Agen Tersedia:*\n${AGENTS.map(a => `${a.icon} *${a.name}* — ${a.description}`).join('\n')}\n\n🌐 Platform web: the-blue-shark-ars8.vercel.app`,
+        text: `🦈 *Panduan The Blue Shark Bot*\n\n*Perintah:*\n/start — Mulai ulang\n/agents — Pilih agen AI\n/collab — Mode multi-agen\n/status — Lihat agen aktif\n\n*Cara Pakai:*\n1️⃣ Pilih agen dengan tombol "🤖 Pilih Agen"\n2️⃣ Ketik pertanyaan Anda\n3️⃣ Tunggu analisis dari AI\n\n*Agen Tersedia:*\n${AGENTS.map(a => `${a.icon} *${a.name}* — ${a.description}`).join('\n')}\n\n🌐 Platform web: the-blue-shark-ars8.vercel.app`,
         parse_mode: 'Markdown',
         reply_markup: getMainMenuKeyboard(),
       });
