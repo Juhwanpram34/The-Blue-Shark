@@ -6,21 +6,21 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const IMAGE_LIMITS = {
   free: {
     maxVariations: 1,
-    allowedSizes: ['512x512'],
+    allowedSizes: ['1024x1024'],
     allowedQualities: ['standard'],
-    defaultSize: '512x512',
+    defaultSize: '1024x1024',
     defaultQuality: 'standard',
   },
   pro: {
     maxVariations: 3,
-    allowedSizes: ['512x512', '1024x1024', '1024x1792', '1792x1024'],
+    allowedSizes: ['1024x1024', '1024x1792', '1792x1024'],
     allowedQualities: ['standard', 'hd'],
     defaultSize: '1024x1024',
     defaultQuality: 'standard',
   },
   business: {
     maxVariations: 4,
-    allowedSizes: ['512x512', '1024x1024', '1024x1792', '1792x1024'],
+    allowedSizes: ['1024x1024', '1024x1792', '1792x1024'],
     allowedQualities: ['standard', 'hd'],
     defaultSize: '1024x1024',
     defaultQuality: 'hd',
@@ -97,7 +97,9 @@ export default async function handler(req, res) {
   const finalVariations = Math.min(Math.max(1, variations), planLimits.maxVariations);
 
   try {
-    const models = ['gpt-image-1', 'dall-e-3', 'dall-e-2'];
+    // Tier 1: dall-e-3 & dall-e-2 available. gpt-image-1 needs Tier 3+.
+    const models = ['dall-e-3', 'dall-e-2'];
+    const modelErrors = [];
 
     for (const model of models) {
       try {
@@ -107,7 +109,7 @@ export default async function handler(req, res) {
         if (maxN >= finalVariations) {
           // Model supports requested n directly
           const result = await generateImages(model, prompt, modelSize, finalQuality, finalVariations);
-          if (result) {
+          if (result && !result.failed) {
             return res.status(200).json({
               ...result,
               planLimits: {
@@ -117,6 +119,9 @@ export default async function handler(req, res) {
               },
             });
           }
+          if (result?.failed) {
+            modelErrors.push({ model, error: result.errorMsg });
+          }
         } else {
           // dall-e-3 only supports n=1, make parallel requests
           const promises = [];
@@ -125,8 +130,15 @@ export default async function handler(req, res) {
           }
           const results = await Promise.allSettled(promises);
           const images = results
-            .filter(r => r.status === 'fulfilled' && r.value)
+            .filter(r => r.status === 'fulfilled' && r.value && !r.value.failed)
             .flatMap(r => r.value.images);
+
+          // Collect errors from failed attempts
+          results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value?.failed) {
+              modelErrors.push({ model, error: r.value.errorMsg });
+            }
+          });
 
           if (images.length > 0) {
             return res.status(200).json({
@@ -144,13 +156,15 @@ export default async function handler(req, res) {
           }
         }
       } catch (modelError) {
-        console.log(`Model ${model} failed, trying next...`);
+        modelErrors.push({ model, error: modelError.message || 'Unknown error' });
+        console.log(`Model ${model} failed:`, modelError.message);
         continue;
       }
     }
 
+    // Return detailed error info for debugging
     return res.status(500).json({
-      error: 'Image generation tidak tersedia di akun Anda. Silakan upgrade plan OpenAI atau top up credit.',
+      error: `Image generation gagal. Detail: ${modelErrors.map(e => `${e.model}: ${e.error}`).join(' | ')}. Pastikan akun OpenAI ada credit dan sudah Tier 1+.`,
     });
   } catch (error) {
     console.error('Image generation error:', error);
@@ -188,7 +202,7 @@ async function generateImages(model, prompt, size, quality, n) {
   const imgData = await imgRes.json();
 
   if (imgData.error || !imgData.data?.length) {
-    return null;
+    return { failed: true, errorMsg: imgData.error?.message || 'No data returned' };
   }
 
   const images = imgData.data.map((item, index) => ({
