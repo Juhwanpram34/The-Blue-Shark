@@ -635,21 +635,20 @@ export default function Home() {
   const handleCheckout = async (planId) => {
     if (planId === 'free') return;
     try {
-      const res = await fetch('/api/doku-checkout', {
+      const res = await fetch('/api/mayar-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId,
-          userId: user.id,
-          userEmail: user.email,
-          userName: user.user_metadata?.full_name || 'User',
+          plan: planId,
+          email: user.email,
+          name: user.user_metadata?.full_name || 'User',
         }),
       });
       const data = await res.json();
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+      if (data.checkoutUrl) {
+        window.open(data.checkoutUrl, '_blank');
       } else {
-        alert(data.error || 'Gagal membuat pembayaran');
+        alert(data.error || 'Gagal membuat pembayaran. Hubungi admin.');
       }
     } catch (e) {
       alert('Terjadi kesalahan. Silakan coba lagi.');
