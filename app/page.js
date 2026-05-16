@@ -733,17 +733,13 @@ export default function Home() {
         if (data.success && data.images?.length > 0) {
           const imgCount = data.images.length;
           content = `🎨 **${imgCount > 1 ? imgCount + ' gambar' : 'Gambar'} berhasil dibuat!**\n`;
-          content += `📐 **Size:** ${data.size || '—'} | 🎯 **Quality:** ${data.quality || 'standard'} | 🤖 **Model:** ${data.model}\n`;
           data.images.forEach((img, idx) => {
             if (imgCount > 1) content += `\n**Variasi ${idx + 1}:**\n`;
             content += `![Generated Image ${idx + 1}](${img.url})\n`;
           });
-          if (data.images[0].revisedPrompt && data.images[0].revisedPrompt !== parsedPrompt) {
-            content += `\n**Revised Prompt:** ${data.images[0].revisedPrompt}`;
-          }
           // Show tips for free users
           if (userPlan === 'free') {
-            content += `\n\n💡 *Upgrade ke Pro untuk generate hingga 3 variasi, ukuran custom, dan kualitas HD!*`;
+            content += `\n💡 *Upgrade ke Pro untuk generate gambar unlimited dengan kualitas tinggi!*`;
           }
         } else {
           content = `⚠️ Gagal membuat gambar: ${data.error || 'Unknown error'}`;
