@@ -658,6 +658,26 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Enforce plan limits
+    const plan = getPlan(userPlan);
+
+    // Check agent access
+    if (!canUseAgent(userPlan, activeAgent.id)) {
+      const allowedNames = plan.limits.agents.map(id => {
+        const a = AGENTS.find(ag => ag.id === id);
+        return a ? `${a.icon} ${a.name}` : id;
+      }).join(', ');
+      alert(`⚠️ Agen ${activeAgent.name} tidak tersedia di paket ${plan.name}.\n\nAgen yang tersedia: ${allowedNames}\n\nUpgrade ke Pro untuk akses semua agen.`);
+      return;
+    }
+
+    // Check daily query limit
+    if (plan.limits.queriesPerDay !== -1 && queriesUsed >= plan.limits.queriesPerDay) {
+      alert(`⚠️ Batas query harian tercapai (${queriesUsed}/${plan.limits.queriesPerDay}).\n\nUpgrade ke Pro untuk 100 query/hari atau Business untuk unlimited.`);
+      return;
+    }
+
     const userInput = input.trim();
     const userMessage = { role: 'user', content: userInput };
     const updatedMessages = [...currentMessages, userMessage];
@@ -750,6 +770,20 @@ export default function Home() {
 
   const sendCollaboration = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Enforce collab access
+    if (!canUseCollaboration(userPlan)) {
+      alert('⚠️ Multi-Agent Collaboration tidak tersedia di paket Free.\n\nUpgrade ke Pro atau Business untuk menggunakan fitur ini.');
+      return;
+    }
+
+    // Check daily query limit
+    const plan = getPlan(userPlan);
+    if (plan.limits.queriesPerDay !== -1 && queriesUsed >= plan.limits.queriesPerDay) {
+      alert(`⚠️ Batas query harian tercapai (${queriesUsed}/${plan.limits.queriesPerDay}).\n\nUpgrade untuk query lebih banyak.`);
+      return;
+    }
+
     const query = input.trim();
     setInput('');
     setIsLoading(true);
@@ -1066,14 +1100,21 @@ export default function Home() {
             fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             transition: 'all 0.2s ease',
           }}>🎯 Single Agent</button>
-          <button onClick={() => setMode('collab')} style={{
+          <button onClick={() => {
+            if (!canUseCollaboration(userPlan)) {
+              alert('⚠️ Multi-Agent Collaboration tidak tersedia di paket Free.\n\nUpgrade ke Pro atau Business.');
+              return;
+            }
+            setMode('collab');
+          }} style={{
             flex: 1, padding: '8px 0', borderRadius: 10, cursor: 'pointer',
             background: mode === 'collab' ? 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(170,0,255,0.15))' : T.bgCard,
             border: `1px solid ${mode === 'collab' ? 'rgba(0,212,255,0.3)' : T.border}`,
             color: mode === 'collab' ? '#00d4ff' : T.textSecondary,
             fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             transition: 'all 0.2s ease',
-          }}>🦈 Multi-Agent</button>
+            opacity: canUseCollaboration(userPlan) ? 1 : 0.5,
+          }}>{canUseCollaboration(userPlan) ? '🦈' : '🔒'} Multi-Agent</button>
         </div>
 
         {/* Agents List */}
@@ -1126,12 +1167,13 @@ export default function Home() {
                 <div style={{
                   fontSize: 12, fontWeight: 600,
                   color: (mode === 'collab' ? selectedCollabAgents.includes(agent.id) : activeAgent.id === agent.id) ? agent.color : T.textSecondary,
-                }}>{agent.name}</div>
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>{agent.name}{!canUseAgent(userPlan, agent.id) && <span style={{ fontSize: 10, opacity: 0.5 }}>🔒</span>}</div>
                 <div style={{
                   fontSize: 9, color: T.textMuted,
                   fontFamily: "'JetBrains Mono', monospace",
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>{agent.description}</div>
+                }}>{!canUseAgent(userPlan, agent.id) ? 'Upgrade ke Pro' : agent.description}</div>
               </div>
               {(conversations[agent.id] || []).length > 0 && (
                 <div style={{
@@ -1331,6 +1373,10 @@ export default function Home() {
           {!isMobile && ((mode === 'single' && currentMessages.length > 0) || (mode === 'collab' && collabResults && !collabResults.error)) && (
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => {
+                if (!getPlan(userPlan).limits.exportResults) {
+                  alert('⚠️ Export PDF tidak tersedia di paket Free.\n\nUpgrade ke Pro untuk menggunakan fitur export.');
+                  return;
+                }
                 if (mode === 'collab' && collabResults) {
                   exportToPDF({
                     type: 'collab',
@@ -1358,6 +1404,10 @@ export default function Home() {
                 onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textMuted; }}
               >📄 PDF</button>
               <button onClick={() => {
+                if (!getPlan(userPlan).limits.exportResults) {
+                  alert('⚠️ Export CSV tidak tersedia di paket Free.\n\nUpgrade ke Pro untuk menggunakan fitur export.');
+                  return;
+                }
                 if (mode === 'collab' && collabResults) {
                   exportToCSV({
                     type: 'collab',
