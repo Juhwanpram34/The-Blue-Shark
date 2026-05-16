@@ -1161,7 +1161,7 @@ export default function Home() {
           {[
             { label: 'Agents', value: AGENTS.length, c: '#00d4ff' },
             { label: 'Active', value: activeAgentsCount, c: '#00e676' },
-            { label: 'Queries', value: totalQueries, c: '#ff6b35' },
+            { label: 'Queries', value: queriesUsed, c: '#ff6b35' },
           ].map((s, i) => (
             <div key={i} style={{
               padding: '8px 10px', background: T.bgGlass,
