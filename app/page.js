@@ -264,12 +264,27 @@ export default function Home() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('plan, queries_used')
+        .select('plan, queries_used, queries_reset_at')
         .eq('id', userId)
         .single();
       if (data) {
         setUserPlan(data.plan || 'free');
-        setQueriesUsed(data.queries_used || 0);
+        
+        // Daily reset: if last reset was before today, reset counter
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const lastReset = data.queries_reset_at || '2000-01-01';
+        
+        if (lastReset < today) {
+          // Reset queries for new day
+          await supabase.from('profiles').update({ 
+            queries_used: 0, 
+            queries_reset_at: today 
+          }).eq('id', userId);
+          setQueriesUsed(0);
+        } else {
+          setQueriesUsed(data.queries_used || 0);
+        }
       }
     } catch (e) { console.error('Plan fetch error:', e); }
   };
@@ -751,6 +766,10 @@ export default function Home() {
           const newCount = prev + 1;
           const qPlan = getPlan(userPlan);
           const qLimit = qPlan.limits.queriesPerDay;
+          // Sync to database
+          if (user?.id) {
+            supabase.from('profiles').update({ queries_used: newCount }).eq('id', user.id).then(() => {}).catch(() => {});
+          }
           if (qLimit > 0 && newCount === Math.floor(qLimit * 0.8) && user?.email) {
             fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ type: 'query-limit', to: user.email, name: user.user_metadata?.full_name || 'User', data: { used: newCount, limit: qLimit } }),
@@ -810,6 +829,10 @@ export default function Home() {
           const newCount = prev + 1;
           const qPlan = getPlan(userPlan);
           const qLimit = qPlan.limits.queriesPerDay;
+          // Sync to database
+          if (user?.id) {
+            supabase.from('profiles').update({ queries_used: newCount }).eq('id', user.id).then(() => {}).catch(() => {});
+          }
           if (qLimit > 0 && newCount === Math.floor(qLimit * 0.8) && user?.email) {
             fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ type: 'query-limit', to: user.email, name: user.user_metadata?.full_name || 'User', data: { used: newCount, limit: qLimit } }),
