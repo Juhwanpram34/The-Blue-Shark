@@ -55,6 +55,24 @@ const PROMPT_TEMPLATES = {
     { icon: '📈', title: 'Kurangi Tiket 50%', desc: 'Strategi self-service', prompt: 'Buat strategi untuk mengurangi volume tiket support 50% untuk [sebutkan bisnis]. Sertakan knowledge base structure, self-service portal design, dan proactive support automation.' },
     { icon: '⭐', title: 'Tingkatkan CSAT', desc: 'Strategi kepuasan pelanggan', prompt: 'Buat action plan untuk meningkatkan CSAT score dari [X] ke [Y] dalam 3 bulan. Sertakan quick wins, process improvements, training plan, dan measurement framework.' },
   ],
+  'financial-planner': [
+    { icon: '📊', title: 'Proyeksi P&L', desc: 'Proyeksi laba rugi bisnis', prompt: 'Buat proyeksi P&L (Profit & Loss) 12 bulan untuk bisnis [sebutkan jenis bisnis] dengan modal awal Rp [sebutkan]. Sertakan revenue projection, COGS, operational expenses, dan net profit per bulan.' },
+    { icon: '💵', title: 'Pricing Strategy', desc: 'Strategi harga yang optimal', prompt: 'Tentukan pricing strategy optimal untuk produk [sebutkan produk]. Analisis cost-plus, value-based, dan competitive pricing. Sertakan break-even point dan margin analysis.' },
+    { icon: '📋', title: 'Budget Plan', desc: 'Rencana anggaran bisnis', prompt: 'Buat budget plan lengkap untuk [sebutkan bisnis] selama 6 bulan. Alokasikan budget per departemen (marketing, operasional, gaji, R&D) dan sertakan contingency plan 15%.' },
+    { icon: '🏦', title: 'Cash Flow', desc: 'Analisis arus kas', prompt: 'Buat analisis cash flow untuk [sebutkan bisnis]. Identifikasi cash flow gaps, rekomendasi untuk improve cash conversion cycle, dan strategi untuk menjaga runway minimal 6 bulan.' },
+  ],
+  'product-manager': [
+    { icon: '🗺️', title: 'Product Roadmap', desc: 'Rencana pengembangan produk', prompt: 'Buat product roadmap 6 bulan untuk [sebutkan produk/aplikasi] menggunakan framework NOW/NEXT/LATER. Sertakan fitur prioritas, timeline, dependencies, dan success metrics per milestone.' },
+    { icon: '👤', title: 'User Story & Persona', desc: 'Persona dan user stories', prompt: 'Buat 3 user persona dan 15 user stories untuk [sebutkan produk]. Format: "Sebagai [persona], saya ingin [fitur], supaya [benefit]". Prioritaskan menggunakan RICE scoring.' },
+    { icon: '📄', title: 'PRD Document', desc: 'Product Requirements Doc', prompt: 'Tulis PRD (Product Requirements Document) lengkap untuk fitur [sebutkan fitur]. Sertakan problem statement, goals, user stories, requirements (functional & non-functional), wireframe description, dan acceptance criteria.' },
+    { icon: '⚖️', title: 'Feature Prioritization', desc: 'Prioritas fitur dengan RICE', prompt: 'Bantu prioritaskan fitur-fitur berikut untuk [sebutkan produk]: [list fitur]. Gunakan RICE framework (Reach, Impact, Confidence, Effort) dan rekomendasikan urutan development.' },
+  ],
+  'data-analyst': [
+    { icon: '📊', title: 'Dashboard KPI', desc: 'Desain dashboard bisnis', prompt: 'Desain KPI dashboard untuk [sebutkan bisnis/departemen]. Tentukan 8-12 metrik utama, cara menghitungnya, target benchmarks, dan rekomendasi tools visualisasi (Metabase/Looker/Google Sheets).' },
+    { icon: '🔍', title: 'Analisis Penjualan', desc: 'Deep dive data penjualan', prompt: 'Bantu analisis data penjualan untuk [sebutkan bisnis]. Saya ingin tahu: tren revenue bulanan, top products, customer segmentation, dan anomali. Berikan SQL query dan Excel formula yang relevan.' },
+    { icon: '🧪', title: 'A/B Test Analysis', desc: 'Analisis hasil eksperimen', prompt: 'Bantu analisis hasil A/B test: Variant A [sebutkan metric A], Variant B [sebutkan metric B], sample size [N]. Hitung statistical significance, confidence interval, dan rekomendasikan keputusan.' },
+    { icon: '📈', title: 'Cohort Analysis', desc: 'Analisis retensi pengguna', prompt: 'Buat framework cohort analysis untuk [sebutkan produk/aplikasi]. Sertakan SQL query untuk menghitung retention rate per cohort, visualisasi yang tepat, dan insight untuk improve retention.' },
+  ],
 };
 
 function formatMessage(text, isDark = true) {
