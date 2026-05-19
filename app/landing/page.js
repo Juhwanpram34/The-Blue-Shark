@@ -372,34 +372,32 @@ export default function LandingPage() {
           <h2 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, marginBottom: 12 }}>Pilih Paket yang Tepat</h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 500, margin: '0 auto' }}>Mulai gratis, upgrade kapan saja sesuai kebutuhan bisnis Anda</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 20, maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16, maxWidth: 1060, margin: '0 auto' }}>
           {PLANS.map(plan => {
-            const icons = { free: '🐟', pro: '🦈', business: '🐋' };
-            const colors = { free: '#64ffda', pro: '#00d4ff', business: '#aa00ff' };
             const isPro = plan.id === 'pro';
             return (
               <div key={plan.id} style={{
-                padding: '32px 28px', position: 'relative',
+                padding: '28px 22px', position: 'relative',
                 background: isPro ? 'linear-gradient(180deg, rgba(0,212,255,0.08) 0%, rgba(0,87,255,0.05) 100%)' : 'rgba(255,255,255,0.03)',
                 border: isPro ? '1px solid rgba(0,212,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 20, display: 'flex', flexDirection: 'column',
               }}>
                 {isPro && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 18px', borderRadius: 20, background: 'linear-gradient(135deg, #00d4ff 0%, #0057ff 100%)', fontSize: 10, fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: 1 }}>Paling Populer</div>}
-                <div style={{ fontSize: 32, marginBottom: 10 }}>{icons[plan.id]}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: colors[plan.id], marginBottom: 4 }}>{plan.name}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 24 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800, color: '#fff' }}>${plan.price}</span>
-                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{plan.price === 0 ? 'forever' : '/month'}</span>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>{plan.icon}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>{plan.priceLabel}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{plan.period}</span>
                 </div>
-                <div style={{ flex: 1, marginBottom: 24 }}>
+                <div style={{ flex: 1, marginBottom: 20 }}>
                   {plan.features.map((f, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10, fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-                      <span style={{ color: colors[plan.id], flexShrink: 0 }}>✓</span>
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                      <span style={{ color: plan.color, flexShrink: 0 }}>✓</span>
                       <span>{f}</span>
                     </div>
                   ))}
                 </div>
-                <a href="/" style={{ display: 'block', width: '100%', padding: '14px 0', borderRadius: 12, background: `linear-gradient(135deg, ${colors[plan.id]} 0%, ${colors[plan.id]}88 100%)`, color: '#fff', textDecoration: 'none', textAlign: 'center', fontSize: 14, fontWeight: 600, boxShadow: `0 4px 16px ${colors[plan.id]}30` }}>
+                <a href="/" style={{ display: 'block', width: '100%', padding: '12px 0', borderRadius: 12, background: `linear-gradient(135deg, ${plan.color} 0%, ${plan.color}88 100%)`, color: '#fff', textDecoration: 'none', textAlign: 'center', fontSize: 13, fontWeight: 600, boxShadow: `0 4px 16px ${plan.color}30` }}>
                   {plan.price === 0 ? 'Mulai Gratis' : `Pilih ${plan.name}`}
                 </a>
               </div>

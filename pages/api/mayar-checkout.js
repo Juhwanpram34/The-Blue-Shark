@@ -12,6 +12,7 @@ export default async function handler(req, res) {
   // Mayar payment links — set these in Vercel env vars
   // Create payment links in Mayar dashboard for each plan
   const paymentLinks = {
+    student: process.env.MAYAR_STUDENT_LINK,
     pro: process.env.MAYAR_PRO_LINK,
     business: process.env.MAYAR_BUSINESS_LINK,
   };

@@ -2204,7 +2204,7 @@ export default function Home() {
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               {PLANS.map(plan => (
                 <div key={plan.id} style={{
-                  flex: '1 1 250px', maxWidth: 280, padding: '28px 24px',
+                  flex: '1 1 220px', maxWidth: 250, padding: '24px 20px',
                   background: plan.popular
                     ? 'linear-gradient(180deg, rgba(0,212,255,0.08) 0%, rgba(0,87,255,0.05) 100%)'
                     : 'rgba(255,255,255,0.03)',
