@@ -947,6 +947,7 @@ export default function Home() {
   }
 
   if (!user) {
+    if (typeof window !== 'undefined') { window.location.href = '/landing'; return null; }
     return (
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
