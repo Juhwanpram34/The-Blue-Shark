@@ -39,7 +39,7 @@ export async function POST(req) {
     // ─── Forward LegalAI.Pro payments ───
     if (isLegalAI(productName)) {
       try {
-        const res = await fetch("https://ai-business-sigma-gray.vercel.app/api/webhook/mayar", {
+        const res = await fetch("https://legalreview.pro/api/webhook/mayar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
